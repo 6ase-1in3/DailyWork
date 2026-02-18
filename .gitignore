@@ -1,0 +1,21 @@
+# System & Tools
+.DS_Store
+Thumbs.db
+node_modules/
+.env
+
+# Legacy & Local Data
+Legacy_Data/
+Local_Server/
+*.bak
+*.csv
+*.txt
+temp_*.html
+
+# GAS Configs (Store locally or in env)
+gas_configs_backup.txt
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,3304 @@
+﻿<!-- Force UTF-8 Save -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業管理表 (v2.2 GAS)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        /* Sticky Column Styles */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            left: 0;
+            z-index: 20;
+            /* Higher than normal rows (0) but lower than headers (40) */
+        }
+
+        thead .sticky-col {
+            z-index: 50 !important;
+            /* Corner must be higher than normal headers */
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+
+        /* Compact rows: reduce padding globally + vertical align */
+        td,
+        th {
+            padding-top: 0.15rem !important;
+            padding-bottom: 0.15rem !important;
+            vertical-align: middle !important;
+            line-height: 1.3 !important;
+        }
+
+        /* Settings panel: reset to normal font */
+        .settings-side-panel {
+            font-size: 13px !important;
+        }
+
+        .settings-side-panel td,
+        .settings-side-panel th {
+            padding-top: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+            line-height: 1.4 !important;
+        }
+
+        .settings-table td,
+        .settings-table th {
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
+        }
+
+        /* Dynamic font scaling support using CSS variables & em */
+        table:not(.settings-table) .text-xs {
+            font-size: 0.85em !important;
+        }
+
+        table:not(.settings-table) .text-sm {
+            font-size: 1em !important;
+        }
+
+        table:not(.settings-table) .text-base {
+            font-size: 1.15em !important;
+        }
+
+        /* Ensure cells inherit the table base size */
+        table:not(.settings-table) td,
+        table:not(.settings-table) th {
+            font-size: inherit;
+        }
+
+        /* Icon adjustment for scalability */
+        table:not(.settings-table) i[class*="ri-"] {
+            font-size: 1.25em;
+            vertical-align: middle;
+        }
+
+        /* Sticky column isolation: prevent horizontal-scroll content from overlapping */
+        td[class*="sticky"],
+        th[class*="sticky"] {
+            isolation: isolate;
+        }
+
+        /* Commercial Grade Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Settings Panel Overlay Transitions */
+        .slide-right-enter-active,
+        .slide-right-leave-active {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .slide-right-enter-from,
+        .slide-right-leave-to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        /* Filter Bar Styles */
+        .filter-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.5rem 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            position: relative;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .filter-btn.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .filter-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.25rem;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+            display: none;
+        }
+
+        .filter-dropdown.show {
+            display: block;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        .filter-option:hover {
+            background: #f3f4f6;
+        }
+
+        .filter-option.disabled {
+            opacity: 0.5;
+            /* color: #9ca3af; */
+        }
+
+        .filter-actions {
+            padding: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.5rem;
+            position: sticky;
+            top: 0;
+            background: white;
+        }
+
+        .filter-action-btn {
+            flex: 1;
+            padding: 0.25rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-clear {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .btn-clear:hover {
+            background: #e5e7eb;
+        }
+
+        .group-header {
+            position: sticky;
+            top: 44px;
+            /* Below main header */
+            z-index: 30;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-header th {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            /* Lower than corner (50) but higher than body (20) */
+            background-color: #f8fafc;
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* Gooey Loader Animation */
+        /* -------------------------------------------------------------------------- */
+        .gooey {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 142px;
+            height: 40px;
+            margin: -20px 0 0 -71px;
+            background: #fff;
+            filter: contrast(20);
+        }
+
+        .gooey .dot {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 12px;
+            left: 15px;
+            filter: blur(4px);
+            background: #000;
+            border-radius: 50%;
+            transform: translateX(0);
+            animation: dot 2.8s infinite;
+        }
+
+        .gooey .dots {
+            transform: translateX(0);
+            margin-top: 12px;
+            margin-left: 31px;
+            animation: dots 2.8s infinite;
+        }
+
+        .gooey .dots span {
+            display: block;
+            float: left;
+            width: 16px;
+            height: 16px;
+            margin-left: 16px;
+            filter: blur(4px);
+            background: #000;
+            border-radius: 50%;
+        }
+
+        @keyframes dot {
+            50% {
+                transform: translateX(96px);
+            }
+        }
+
+        @keyframes dots {
+            50% {
+                transform: translateX(-31px);
+            }
+        }
+    </style>
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.background = 'red';
+            container.style.color = 'white';
+            container.style.padding = '20px';
+            container.style.zIndex = '9999';
+            container.innerHTML = `<h3>Error: ${msg}</h3><p>Line: ${lineNo}</p><pre>${error ? error.stack : ''}</pre>`;
+            document.body.appendChild(container);
+            return false;
+        };
+    </script>
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-gray-800">
+
+    <div id="app" class="flex flex-col h-full relative" v-cloak>
+        <!-- Gooey Loader Overlay -->
+        <div v-if="isLoading"
+            class="fixed inset-0 z-[100] flex items-center justify-center bg-white/90 backdrop-blur-sm transition-opacity duration-300">
+            <div class="gooey">
+                <span class="dot"></span>
+                <div class="dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG Filter for Gooey Effect -->
+        <svg style="position: absolute; width: 0; height: 0;" xmlns="http://www.w3.org/2000/svg" version="1.1">
+            <defs>
+                <filter id="goo">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9"
+                        result="goo" />
+                    <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+                </filter>
+            </defs>
+        </svg>
+
+        <!-- Protocol Warning (Safety) -->
+        <div v-if="isLocalFile"
+            class="fixed inset-0 bg-gray-900 z-[100] flex flex-col items-center justify-center text-white p-8 text-center">
+            <i class="ri-alarm-warning-fill text-6xl text-yellow-500 mb-4"></i>
+            <h2 class="text-3xl font-bold mb-2">無法連線 Server</h2>
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 max-w-lg mt-4">
+                <a href="http://127.0.0.1:8998"
+                    class="text-blue-400 hover:text-blue-300 text-2xl font-mono underline">http://127.0.0.1:8998</a>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shrink-0">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-sm">
+                        <i class="ri-kanban-view text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-900 leading-none">作業管理表</h1>
+                    <div class="relative group">
+                        <select :value="currentGasConfig ? currentGasConfig.id : ''" @change="(e) => {
+                                const newId = e.target.value;
+                                const conf = gasConfigs.find(c => c.id === newId);
+                                setActiveGasConfig(conf || null);
+                            }"
+                            class="appearance-none bg-gray-100 text-xs font-medium text-gray-600 pl-3 pr-8 py-1 rounded-full border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:bg-gray-200 transition-colors"
+                            :class="{'text-indigo-600 font-bold bg-indigo-50': currentGasConfig}">
+                            <option value="" disabled>選擇連線...</option>
+                            <option v-for="conf in gasConfigs" :key="conf.id" :value="conf.id">
+                                🟢 {{ conf.name }}
+                            </option>
+                            <option value="local" v-if="gasConfigs.length === 0">📂 本機模式 (無設定)</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                            <i class="ri-arrow-down-s-line text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Global Stats -->
+                    <div
+                        class="hidden md:flex items-center gap-4 text-xs bg-gray-50 px-4 py-1.5 rounded-full border border-gray-200 mr-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                            <span class="text-gray-600 font-medium tracking-wide">總計 {{ stats.total }}</span>
+                        </div>
+                        <div class="w-px h-3 bg-gray-300"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span class="text-emerald-700 font-medium tracking-wide">完成 {{ stats.completed }}</span>
+                        </div>
+                    </div>
+
+                    <!-- GroupBy Toggle (Segmented) -->
+                    <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 mr-2">
+                        <button @click="groupBy = 'project_code'"
+                            class="px-3 py-1 text-xs font-medium rounded-md transition-all"
+                            :class="groupBy === 'project_code' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+                            專案
+                        </button>
+                        <button @click="groupBy = 'client'"
+                            class="px-3 py-1 text-xs font-medium rounded-md transition-all"
+                            :class="groupBy === 'client' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+                            客戶
+                        </button>
+                    </div>
+
+                    <!-- Font Scale Toggle -->
+                    <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200 mr-2">
+                        <button @click="fontScale = 'small'"
+                            class="px-2 py-1 text-xs font-medium rounded-md transition-all"
+                            :class="fontScale === 'small' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+                            小
+                        </button>
+                        <button @click="fontScale = 'medium'"
+                            class="px-2 py-1 text-xs font-medium rounded-md transition-all"
+                            :class="fontScale === 'medium' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+                            中
+                        </button>
+                        <button @click="fontScale = 'large'"
+                            class="px-2 py-1 text-xs font-medium rounded-md transition-all"
+                            :class="fontScale === 'large' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+                            大
+                        </button>
+                    </div>
+
+                    <button
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-md shadow-sm text-sm font-medium flex items-center gap-1.5 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        @click="openAddModal" title="Add New Task">
+                        <i class="ri-add-line"></i> <span class="hidden sm:inline">新增作業</span>
+                    </button>
+
+                    <div class="h-6 w-px bg-gray-200 mx-1"></div>
+
+                    <button
+                        class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1 rounded-md shadow-sm text-sm font-medium flex items-center gap-1.5 transition-all focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
+                        :class="{'ring-2 ring-rose-500 border-rose-500 text-rose-600': hasUnsavedChanges}"
+                        @click="saveData" :disabled="isSaving">
+                        <i class="ri-save-3-line" :class="{'animate-spin': isSaving}"></i>
+                        <span class="hidden sm:inline">{{ isSaving ? '儲存中...' : '儲存變更' }}</span>
+                    </button>
+
+                    <button
+                        class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        @click="openSettings" title="Settings">
+                        <i class="ri-settings-3-line text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content + Settings Side Panel wrapper -->
+        <div class="flex-1 overflow-hidden relative flex flex-row">
+            <main class="flex-1 overflow-hidden flex flex-col min-w-0 w-full transition-all duration-300">
+                <div class="h-full overflow-hidden flex flex-col w-full px-4 sm:px-6 lg:px-8 py-4">
+
+                    <!-- Data Grid Card -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
+
+                        <!-- Table Container -->
+                        <div class="flex-1 overflow-auto relative custom-scrollbar">
+                            <table class="w-full text-left border-collapse main-data-table"
+                                :style="{fontSize: fontSizes[fontScale], '--table-font-sz': fontSizes[fontScale]}">
+                                <thead class="bg-gray-50 z-20">
+                                    <tr>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.index, width: dynamicColWidths.index }"
+                                            class="sticky top-0 left-0 z-50 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider text-center border-b border-r border-gray-200">
+                                            #
+                                            <span class="relative inline-block ml-1 align-middle">
+                                                <button @click.stop="toggleDropdown('bu', $event)"
+                                                    class="focus:outline-none transition-colors"
+                                                    :class="filterExclusions['bu'].size > 0 ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'">
+                                                    <i class="ri-filter-3-fill"
+                                                        v-if="filterExclusions['bu'].size > 0"></i>
+                                                    <i class="ri-filter-3-line" v-else></i>
+                                                </button>
+                                                <!-- BU Dropdown -->
+                                                <Teleport to="body">
+                                                    <div v-if="activeDropdown === 'bu'"
+                                                        class="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100"
+                                                        :style="dropdownStyle" @click.stop>
+                                                        <div
+                                                            class="flex border-b border-gray-100 bg-gray-50/50 p-2 gap-2">
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded px-2 py-1.5 transition-colors shadow-sm"
+                                                                @click.stop="clearFilter('bu')">Select All</button>
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-rose-600 hover:border-rose-300 rounded px-2 py-1.5 transition-colors shadow-sm"
+                                                                @click.stop="hideAllFilter('bu')">Clear All</button>
+                                                        </div>
+                                                        <div class="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                                                            <div v-for="opt in availableOptions['bu']" :key="opt"
+                                                                class="flex items-center gap-3 px-3 py-2 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
+                                                                @click.stop="toggleFilter('bu', opt)">
+                                                                <input type="checkbox"
+                                                                    :checked="!filterExclusions['bu'].has(opt)"
+                                                                    class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 pointer-events-none transition duration-150 ease-in-out">
+                                                                <span class="text-sm font-medium truncate flex-1"
+                                                                    :class="!filterExclusions['bu'].has(opt) ? 'text-gray-900' : 'text-gray-400'">{{
+                                                                    opt }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div
+                                                            class="bg-gray-50 px-3 py-2 text-xs text-gray-400 border-t border-gray-100 text-right font-medium">
+                                                            {{ availableOptions['bu'] ? availableOptions['bu'].length -
+                                                            filterExclusions['bu'].size : 0 }}/{{ availableOptions['bu']
+                                                            ?
+                                                            availableOptions['bu'].length : 0 }}
+                                                        </div>
+                                                    </div>
+                                                </Teleport>
+                                            </span>
+                                        </th>
+
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.status, width: dynamicColWidths.status }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 whitespace-nowrap">
+                                            狀態
+                                            <span class="relative inline-block ml-1 align-middle">
+                                                <button @click.stop="toggleDropdown('status', $event)"
+                                                    class="focus:outline-none transition-colors"
+                                                    :class="filterExclusions['status'].size > 0 ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'">
+                                                    <i class="ri-filter-3-fill"
+                                                        v-if="filterExclusions['status'].size > 0"></i>
+                                                    <i class="ri-filter-3-line" v-else></i>
+                                                </button>
+                                                <!-- Status Dropdown (Simplified for brevity, same style as BU) -->
+                                                <Teleport to="body">
+                                                    <div v-if="activeDropdown === 'status'"
+                                                        class="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100"
+                                                        :style="dropdownStyle" @click.stop>
+                                                        <div
+                                                            class="flex border-b border-gray-100 bg-gray-50/50 p-2 gap-2">
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded px-2 py-1.5 shadow-sm"
+                                                                @click.stop="clearFilter('status')">All</button>
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-rose-600 hover:border-rose-300 rounded px-2 py-1.5 shadow-sm"
+                                                                @click.stop="hideAllFilter('status')">None</button>
+                                                        </div>
+                                                        <div class="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                                                            <div v-for="opt in availableOptions['status']" :key="opt"
+                                                                class="flex items-center gap-3 px-3 py-2 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
+                                                                @click.stop="toggleFilter('status', opt)">
+                                                                <input type="checkbox"
+                                                                    :checked="!filterExclusions['status'].has(opt)"
+                                                                    class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 pointer-events-none">
+                                                                <span class="text-sm font-medium truncate flex-1"
+                                                                    :class="!filterExclusions['status'].has(opt) ? 'text-gray-900' : 'text-gray-400'">{{
+                                                                    opt }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Teleport>
+                                            </span>
+                                        </th>
+
+                                        <th scope="col" :style="{ minWidth: '75px', maxWidth: '200px', width: 'auto' }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 truncate">
+                                            {{ groupBy === 'project_code' ? '客戶' : '專案' }}
+                                            <span class="relative inline-block ml-1 align-middle">
+                                                <button
+                                                    @click.stop="toggleDropdown(groupBy === 'project_code' ? 'client' : 'project_code', $event)"
+                                                    class="focus:outline-none transition-colors"
+                                                    :class="filterExclusions[groupBy === 'project_code' ? 'client' : 'project_code'].size > 0 ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'">
+                                                    <i class="ri-filter-3-fill"
+                                                        v-if="filterExclusions[groupBy === 'project_code' ? 'client' : 'project_code'].size > 0"></i>
+                                                    <i class="ri-filter-3-line" v-else></i>
+                                                </button>
+                                                <!-- Project Dropdown -->
+                                                <Teleport to="body">
+                                                    <div v-if="activeDropdown === (groupBy === 'project_code' ? 'client' : 'project_code')"
+                                                        class="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100"
+                                                        :style="dropdownStyle" @click.stop>
+                                                        <div
+                                                            class="flex border-b border-gray-100 bg-gray-50/50 p-2 gap-2">
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded px-2 py-1.5 shadow-sm"
+                                                                @click.stop="clearFilter(groupBy === 'project_code' ? 'client' : 'project_code')">All</button>
+                                                            <button
+                                                                class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-rose-600 hover:border-rose-300 rounded px-2 py-1.5 shadow-sm"
+                                                                @click.stop="hideAllFilter(groupBy === 'project_code' ? 'client' : 'project_code')">None</button>
+                                                        </div>
+                                                        <div class="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                                                            <div v-for="opt in availableOptions[groupBy === 'project_code' ? 'client' : 'project_code']"
+                                                                :key="opt"
+                                                                class="flex items-center gap-3 px-3 py-2 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
+                                                                @click.stop="toggleFilter(groupBy === 'project_code' ? 'client' : 'project_code', opt)">
+                                                                <input type="checkbox"
+                                                                    :checked="!filterExclusions[groupBy === 'project_code' ? 'client' : 'project_code'].has(opt)"
+                                                                    class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 pointer-events-none">
+                                                                <span class="text-sm font-medium truncate flex-1"
+                                                                    :class="!filterExclusions[groupBy === 'project_code' ? 'client' : 'project_code'].has(opt) ? 'text-gray-900' : 'text-gray-400'">{{
+                                                                    opt }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Teleport>
+                                            </span>
+                                        </th>
+
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.task, width: dynamicColWidths.task }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                            作業名稱
+                                        </th>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.start, width: dynamicColWidths.start }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                            開始日
+                                        </th>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.due, width: dynamicColWidths.due }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                            預計完成日
+                                        </th>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.remaining, width: dynamicColWidths.remaining }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap border-b border-gray-200">
+                                            剩餘
+                                        </th>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.complete, width: dynamicColWidths.complete }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap border-b border-gray-200 relative group">
+                                            <div class="flex items-center justify-center gap-1">
+                                                完成日
+                                                <button @click.stop="toggleDropdown('complete_date', $event)"
+                                                    :class="filterExclusions['complete_date'].size > 0 ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'"><i
+                                                        class="ri-filter-3-fill"
+                                                        v-if="filterExclusions['complete_date'].size > 0"></i><i
+                                                        class="ri-filter-3-line" v-else></i></button>
+                                            </div>
+                                            <Teleport to="body">
+                                                <div v-if="activeDropdown === 'complete_date'"
+                                                    class="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100"
+                                                    :style="dropdownStyle" @click.stop>
+                                                    <div class="flex border-b border-gray-100 bg-gray-50/50 p-2 gap-2">
+                                                        <button
+                                                            class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded px-2 py-1.5 shadow-sm"
+                                                            @click.stop="clearFilter('complete_date')">All</button>
+                                                        <button
+                                                            class="flex-1 text-xs bg-white border border-gray-200 text-gray-600 hover:text-rose-600 hover:border-rose-300 rounded px-2 py-1.5 shadow-sm"
+                                                            @click.stop="hideAllFilter('complete_date')">None</button>
+                                                    </div>
+                                                    <div class="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                                                        <div v-for="opt in availableOptions['complete_date']" :key="opt"
+                                                            class="flex items-center gap-3 px-3 py-2 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
+                                                            @click.stop="toggleFilter('complete_date', opt)">
+                                                            <input type="checkbox"
+                                                                :checked="!filterExclusions['complete_date'].has(opt)"
+                                                                class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 pointer-events-none">
+                                                            <span class="text-sm font-medium truncate flex-1"
+                                                                :class="!filterExclusions['complete_date'].has(opt) ? 'text-gray-900' : 'text-gray-400'">{{
+                                                                opt }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        class="bg-gray-50 px-3 py-2 text-xs text-gray-400 border-t border-gray-100 text-right font-medium">
+                                                        {{ availableOptions['complete_date'] ?
+                                                        availableOptions['complete_date'].length -
+                                                        filterExclusions['complete_date'].size : 0 }}/{{
+                                                        availableOptions['complete_date'] ?
+                                                        availableOptions['complete_date'].length : 0 }}
+                                                    </div>
+                                        </th>
+                                        <th scope="col"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                            備註
+                                        </th>
+                                        <th scope="col"
+                                            :style="{ minWidth: dynamicColWidths.action, width: dynamicColWidths.action }"
+                                            class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 relative">
+                                            <!-- Action Icon only -->
+                                            <button v-if="hasActiveFilters" @click.stop="clearAllFilters"
+                                                title="Clear All Filters"
+                                                class="text-rose-500 hover:text-rose-700 transition-colors p-1 bg-rose-50 hover:bg-rose-100 rounded-full flex items-center justify-center mx-auto"
+                                                style="width: 24px; height: 24px;">
+                                                <i class="ri-filter-off-line text-sm"></i>
+                                            </button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 bg-white">
+                                    <!-- Loop BU Sections -->
+                                    <template v-for="bu in buSections" :key="bu.name">
+                                        <!-- BU Section Header -->
+                                        <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+                                            @click="toggleBU(bu.name)">
+                                            <td colspan="10"
+                                                class="px-3 py-1 sticky left-0 z-30 bg-gray-50 border-r border-gray-200">
+                                                <div class="flex items-center gap-2">
+                                                    <i :class="isBUCollapsed(bu.name) ? 'ri-arrow-right-s-line' : 'ri-arrow-down-s-line'"
+                                                        class="text-gray-400" style="font-size: 0.6em;"></i>
+                                                    <span class="font-semibold text-gray-800" :class="bu.textClass"
+                                                        style="font-size: 1.1em;">{{ bu.label }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+
+                                        <!-- Project Groups inside BU -->
+                                        <template v-for="(group, gIndex) in bu.groups" :key="group.id"
+                                            v-if="!isBUCollapsed(bu.name)">
+                                            <!-- Group Header -->
+                                            <tr class="bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                @click="toggleGroup(group.id)">
+                                                <td class="sticky left-0 z-20 bg-gray-50 group-hover:bg-gray-100 px-4 py-1 text-center border-r border-gray-200 border-b border-gray-200"
+                                                    :class="{'text-emerald-600': group.project_status === 'O', 'text-rose-500': group.project_status === 'X', 'text-gray-400': group.project_status !== 'O' && group.project_status !== 'X'}">
+                                                    <i class="ri-folder-line transition-transform duration-200"
+                                                        :class="{'rotate-90': !isGroupCollapsed(group.id)}"></i>
+                                                </td>
+                                                <td colspan="9" class="px-3 py-1 border-b border-gray-200">
+                                                    <div class="flex justify-between items-center">
+                                                        <div class="flex items-center gap-3">
+                                                            <span class="text-sm font-semibold text-gray-900">{{
+                                                                group.name
+                                                                || '未分類'
+                                                                }}</span>
+
+                                                        </div>
+                                                        <div class="flex gap-4 text-xs font-medium text-gray-500">
+                                                            <span>總計: {{ group.items.length }}</span>
+                                                            <span class="text-emerald-600">完成: {{ group.completedCount
+                                                                }}</span>
+                                                            <span class="text-amber-500">待辦: {{ group.items.length -
+                                                                group.completedCount }}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Group Items -->
+                                            <tr v-for="(item, iIndex) in group.items" :key="item.id"
+                                                v-show="!isGroupCollapsed(group.id)"
+                                                class="hover:bg-gray-50 transition-colors group/row">
+
+                                                <td
+                                                    class="sticky left-0 z-30 bg-white group-hover/row:bg-gray-50 px-3 py-0.5 text-sm text-gray-400 text-center border-r border-gray-100 border-b border-gray-100">
+                                                    {{ item._globalSequence }}
+                                                </td>
+
+                                                <!-- Status -->
+                                                <td class="px-3 py-0.5 border-b border-gray-100 whitespace-nowrap">
+                                                    <span
+                                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold"
+                                                        :style="getStatusStyle(getEffectiveStatus(item))">
+                                                        {{ getEffectiveStatus(item) || '-' }}
+                                                    </span>
+                                                    <div v-if="item.recurrence"
+                                                        class="text-xs text-indigo-500 mt-1 flex items-center gap-1">
+                                                        <i class="ri-repeat-line"></i> {{
+                                                        recurrenceLabel(item.recurrence)
+                                                        }}
+                                                    </div>
+                                                </td>
+
+                                                <!-- Client/Project -->
+                                                <td class="px-3 py-1 border-b border-gray-100 whitespace-nowrap text-sm font-medium text-gray-600 truncate"
+                                                    :style="{ minWidth: '75px', maxWidth: '200px', width: 'auto' }">
+                                                    <div class="truncate"
+                                                        :title="groupBy === 'project_code' ? item.client : item.project_code">
+                                                        {{ groupBy === 'project_code' ? item.client : item.project_code
+                                                        }}
+                                                    </div>
+                                                </td>
+
+                                                <!-- Task Name -->
+                                                <td class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-900 font-medium break-words max-w-[140px]"
+                                                    :title="item.task_name">
+                                                    {{ item.task_name }}
+                                                </td>
+
+                                                <!-- Start Date -->
+                                                <td
+                                                    class="px-3 py-1 border-b border-gray-100 text-center text-sm text-gray-500 font-mono tracking-tight">
+                                                    <div v-html="formatDateHtml(item.start_date)"></div>
+                                                </td>
+
+                                                <!-- Due Date -->
+                                                <td
+                                                    class="px-3 py-1 border-b border-gray-100 text-center text-sm text-gray-900 font-medium font-mono tracking-tight">
+                                                    <div v-html="formatDueDateWithHistory(item)"></div>
+                                                </td>
+
+                                                <!-- Countdown -->
+                                                <td
+                                                    class="px-3 py-1 border-b border-gray-100 text-center whitespace-nowrap">
+                                                    <span v-if="getCountdown(item)"
+                                                        :class="['text-sm font-bold font-mono', getCountdownColor(item)]">
+                                                        {{ getCountdown(item) }}
+                                                    </span>
+                                                    <span v-else class="text-gray-300 text-sm">-</span>
+                                                </td>
+
+                                                <!-- Complete Date -->
+                                                <td
+                                                    class="px-4 py-3 border-b border-gray-100 text-center text-sm text-gray-500 font-mono tracking-tight">
+                                                    <div v-html="formatDateHtml(item.complete_date)"></div>
+                                                </td>
+
+                                                <td class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-500 max-w-xs"
+                                                    style="white-space: pre-wrap; word-break: break-word;"
+                                                    :title="item.remark">
+                                                    {{ item.remark }}
+                                                </td>
+
+                                                <!-- Action -->
+                                                <td class="px-3 py-1 border-b border-gray-100 text-center relative">
+                                                    <button @click.stop="editItem(item)"
+                                                        class="text-gray-400 hover:text-indigo-600 transition-colors bg-transparent hover:bg-indigo-50 p-1.5 rounded-md">
+                                                        <i class="ri-edit-line text-lg"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </template>
+
+                                    <!-- Fallback for empty -->
+                                    <tr v-if="buSections.length === 0">
+                                        <td colspan="10" class="px-6 py-12 text-center text-gray-400">
+                                            {{ loadingError || '資料載入中...' }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+            </main>
+
+            <!-- Edit/Add Modal -->
+            <transition name="fade">
+                <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+                    style="z-index: 100;">
+                    <!-- Backdrop -->
+                    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
+                        @click="closeModal">
+                    </div>
+
+                    <!-- Modal Panel -->
+                    <div
+                        class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] transform transition-all animate-in zoom-in-95 duration-200">
+
+                        <!-- Header -->
+                        <div
+                            class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                            <h3 class="font-bold text-xl text-gray-900 flex items-center gap-2.5">
+                                <div class="p-2 rounded-full"
+                                    :class="editingItem ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'">
+                                    <i :class="editingItem ? 'ri-edit-fill' : 'ri-add-fill'" class="text-xl"></i>
+                                </div>
+                                {{ editingItem ? 'Edit Task' : 'New Task' }}
+                            </h3>
+                            <button @click="closeModal"
+                                class="text-gray-400 hover:text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors focus:outline-none">
+                                <i class="ri-close-line text-xl"></i>
+                            </button>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="p-6 overflow-y-auto custom-scrollbar">
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+                                <!-- Project Code -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Project
+                                        Code</label>
+                                    <div class="relative">
+                                        <select v-model="form.project_code"
+                                            class="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors appearance-none shadow-sm">
+                                            <option value="">Select Project...</option>
+                                            <option v-for="p in projectConf" :key="p.Code" :value="p.Code">{{ p.Code }}
+                                            </option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                            <i class="ri-arrow-down-s-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Client -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Client</label>
+                                    <div class="relative">
+                                        <select v-model="form.client"
+                                            class="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors appearance-none shadow-sm">
+                                            <option value="">Select Client...</option>
+                                            <option v-for="c in uniqueClients" :key="c" :value="c">{{ c }}</option>
+                                        </select>
+
+                                        <!-- Chevron Icon -->
+                                        <div
+                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                            <i class="ri-arrow-down-s-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- BU -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">BU</label>
+                                    <div class="relative">
+                                        <select v-model="form.bu"
+                                            class="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors appearance-none shadow-sm">
+                                            <option value="">Select BU...</option>
+                                            <option v-for="b in buConf" :key="b.BU" :value="b.BU">{{ b.BU }}</option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                            <i class="ri-arrow-down-s-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Status</label>
+                                    <div class="relative">
+                                        <select v-model="form.status"
+                                            class="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors appearance-none shadow-sm">
+                                            <option v-for="s in statusConf" :key="s.Status" :value="s.Status">{{
+                                                s.Status }}
+                                            </option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                            <i class="ri-arrow-down-s-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Task Name -->
+                                <div class="col-span-2">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Task
+                                        Name</label>
+                                    <input type="text" v-model="form.task_name"
+                                        class="w-full px-3 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors shadow-sm placeholder-gray-400"
+                                        placeholder="Enter task description...">
+                                </div>
+
+                                <!-- Start Date -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Start
+                                        Date</label>
+                                    <input type="text" v-model="startDateBuffer" @blur="commitStartDate"
+                                        @keydown.enter.prevent="commitStartDate" placeholder="YY/MM/DD or X"
+                                        class="w-full px-3 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors shadow-sm font-mono">
+                                </div>
+
+                                <!-- Due Date -->
+                                <div class="col-span-1">
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <label class="text-xs font-semibold text-gray-700 uppercase">Due Date</label>
+                                        <button @click="addDueDateRevision" type="button"
+                                            class="text-indigo-600 hover:text-indigo-800 text-xs font-bold px-2 py-0.5 rounded hover:bg-indigo-50 transition-colors"
+                                            title="Archive current date and add new revision">
+                                            + Rev
+                                        </button>
+                                    </div>
+
+                                    <!-- History Display -->
+                                    <div v-if="dueDateHistory.length > 0" class="mb-2 space-y-1">
+                                        <div v-for="(h, idx) in dueDateHistory" :key="idx"
+                                            class="text-xs text-gray-400 line-through font-mono pl-1">
+                                            {{ h }}
+                                        </div>
+                                    </div>
+
+                                    <input type="text" v-model="dueDateBuffer" @blur="commitDueDate"
+                                        @keydown.enter.prevent="commitDueDate" placeholder="YY/MM/DD or X"
+                                        class="w-full px-3 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors shadow-sm font-mono">
+                                </div>
+
+                                <!-- Complete Date -->
+                                <div class="col-span-1">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Done
+                                        Date</label>
+                                    <input type="text" v-model="completeDateBuffer" @blur="commitCompleteDate"
+                                        @keydown.enter.prevent="commitCompleteDate" placeholder="YY/MM/DD or X"
+                                        class="w-full px-3 py-2.5 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors shadow-sm font-mono">
+                                    <p class="text-[10px] text-gray-400 mt-1 ml-1">Enter 'X' for suspended tasks</p>
+                                </div>
+
+                                <!-- Remark -->
+                                <div class="col-span-2">
+                                    <label
+                                        class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Remark</label>
+                                    <textarea v-model="form.remark" rows="3"
+                                        class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block transition-colors resize-none placeholder-gray-400"
+                                        placeholder="Add any additional notes..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div
+                            class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center z-10">
+                            <div v-if="editingItem">
+                                <button @click="deleteItem" id="delete-btn"
+                                    class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 text-sm">
+                                    <i class="ri-delete-bin-line"></i> Delete
+                                </button>
+                            </div>
+                            <div v-else></div>
+
+                            <div class="flex gap-3">
+                                <button @click="closeModal"
+                                    class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 text-sm font-medium transition-all shadow-sm">
+                                    Cancel
+                                </button>
+                                <button @click="confirmSave"
+                                    class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 active:bg-indigo-800 text-sm font-semibold transition-all flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <i class="ri-save-line"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            </main>
+
+            <!-- Settings Side Panel (Overlay Drawer) -->
+            <transition name="slide-right">
+                <div v-if="showSettingsModal"
+                    class="absolute top-0 right-0 bottom-0 z-[70] w-[420px] bg-white border-l border-gray-200 flex flex-col shadow-2xl settings-side-panel">
+
+                    <!-- Header -->
+                    <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <i class="ri-settings-3-fill text-lg text-gray-500"></i>
+                            系統設定
+                        </h2>
+                        <button @click="closeSettings"
+                            class="text-gray-400 hover:text-gray-500 hover:bg-gray-100 p-2 rounded-full transition-colors focus:outline-none">
+                            <i class="ri-close-line text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="flex border-b border-gray-200 bg-white px-6 gap-6">
+                        <button v-for="tab in ['status', 'project', 'bu', 'connection']" :key="tab"
+                            @click="settingsTab = tab"
+                            class="py-4 text-sm font-medium border-b-2 transition-colors relative"
+                            :class="settingsTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'">
+                            {{ tab === 'status' ? '狀態設定' : tab === 'project' ? '專案與指派' : tab === 'bu' ? '事業單位' : '連線設定'
+                            }}
+                            <span v-if="settingsTab === tab"
+                                class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
+                        </button>
+                    </div>
+                    <!-- Body -->
+                    <div class="flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar">
+
+                        <!-- Status Settings -->
+                        <div v-show="settingsTab === 'status'">
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                <table class="w-full text-xs settings-table">
+                                    <thead class="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th class="px-2 py-1 text-left text-xs font-semibold text-gray-500 uppercase"
+                                                style="width:28%">
+                                                狀態名稱</th>
+                                            <th
+                                                class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-8">
+                                                BG</th>
+                                            <th
+                                                class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-8">
+                                                文字</th>
+                                            <th class="px-2 py-1 text-left text-xs font-semibold text-gray-500 uppercase"
+                                                style="width:35%">
+                                                預覽</th>
+                                            <th
+                                                class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-10">
+                                                序</th>
+                                            <th
+                                                class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-8">
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <tr v-for="(s, idx) in tempConfig.status" :key="s._uid"
+                                            class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-2 py-1">
+                                                <input v-model="s.Status"
+                                                    class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                            </td>
+                                            <td class="px-2 py-1 text-center">
+                                                <div
+                                                    class="relative w-6 h-6 rounded overflow-hidden border border-gray-200 mx-auto">
+                                                    <input type="color" v-model="s.BgColor"
+                                                        class="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 border-none cursor-pointer">
+                                                </div>
+                                            </td>
+                                            <td class="px-2 py-1 text-center">
+                                                <div
+                                                    class="relative w-6 h-6 rounded overflow-hidden border border-gray-200 mx-auto">
+                                                    <input type="color" v-model="s.TextColor"
+                                                        class="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 border-none cursor-pointer">
+                                                </div>
+                                            </td>
+                                            <td class="px-2 py-1 text-center">
+                                                <span class="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                                                    :style="{backgroundColor: s.BgColor, color: s.TextColor}">
+                                                    {{ s.Status || 'Aa' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-2 py-1 text-center">
+                                                <input type="number" v-model="s.Order"
+                                                    class="w-12 px-1 py-0.5 bg-white border border-gray-200 rounded text-sm text-center focus:ring-1 focus:ring-indigo-500">
+                                            </td>
+                                            <td class="px-2 py-1 text-center">
+                                                <button @click="removeConfigRow('status', idx)"
+                                                    class="text-gray-400 hover:text-rose-500 transition-colors p-1 rounded hover:bg-rose-50">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                    <button @click="addConfigRow('status')"
+                                        class="text-indigo-600 font-semibold text-sm flex items-center gap-1.5 hover:text-indigo-700 hover:underline px-2 py-1 rounded-md transition-colors">
+                                        <i class="ri-add-line"></i> 新增狀態
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Settings -->
+                        <div v-show="settingsTab === 'project'" class="space-y-8">
+                            <!-- Project Config -->
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <i class="ri-folder-open-line text-indigo-600"></i> Project Configuration
+                                </h4>
+                                <div class="space-y-6">
+                                    <div v-for="b in buConf" :key="b.BU">
+                                        <div
+                                            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                            <div
+                                                class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                                                    <i class="ri-building-2-line text-gray-400"></i> {{ b.BU }}
+                                                </h3>
+                                                <span
+                                                    class="text-xs font-medium px-2 py-0.5 bg-white border border-gray-200 rounded text-gray-500">
+                                                    Order: {{ b.Order }}
+                                                </span>
+                                            </div>
+                                            <table class="w-full text-xs settings-table">
+                                                <thead class="bg-gray-50 border-b border-gray-200">
+                                                    <tr>
+                                                        <th
+                                                            class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-10">
+                                                            序</th>
+                                                        <th
+                                                            class="px-2 py-1 text-left text-xs font-semibold text-gray-500 uppercase">
+                                                            專案代碼</th>
+                                                        <th
+                                                            class="px-2 py-1 text-left text-xs font-semibold text-gray-500 uppercase w-24">
+                                                            預設狀態</th>
+                                                        <th
+                                                            class="px-2 py-1 text-center text-xs font-semibold text-gray-500 uppercase w-10">
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-100">
+                                                    <tr v-for="p in tempGroupedProjects[b.BU]" :key="p._uid"
+                                                        draggable="true" @dragstart="handleProjectDragStart(p)"
+                                                        @dragover.prevent @drop="handleProjectDrop(p, b.BU)"
+                                                        class="cursor-move hover:bg-gray-50 transition-colors group">
+                                                        <td class="px-2 py-1">
+                                                            <div
+                                                                class="flex items-center justify-center gap-1 text-gray-400 group-hover:text-gray-600">
+                                                                <i class="ri-drag-move-2-line text-xs"></i>
+                                                                <span class="font-mono text-xs">{{ p.Order }}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-2 py-1">
+                                                            <input v-model="p.Code"
+                                                                class="w-full bg-transparent border-none p-0 text-sm font-semibold text-gray-700 focus:ring-0 placeholder-gray-300"
+                                                                placeholder="Code">
+                                                        </td>
+                                                        <td class="px-2 py-1">
+                                                            <select v-model="p.Status"
+                                                                @change="onProjectStatusChange(p)"
+                                                                class="w-full border-gray-200 rounded text-xs font-medium px-1 py-0.5 focus:ring-0 focus:border-indigo-500 bg-white">
+                                                                <option value="W">W - Active</option>
+                                                                <option value="O">O - Completed</option>
+                                                                <option value="X">X - Suspended</option>
+                                                            </select>
+                                                        </td>
+                                                        <td class="px-2 py-1 text-center">
+                                                            <button
+                                                                @click="removeConfigRow('project', tempConfig.project.indexOf(p))"
+                                                                class="text-gray-300 hover:text-rose-500 transition-colors p-1 rounded opacity-0 group-hover:opacity-100">
+                                                                <i class="ri-delete-bin-line"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr
+                                                        v-if="!tempGroupedProjects[b.BU] || tempGroupedProjects[b.BU].length === 0">
+                                                        <td colspan="4"
+                                                            class="px-4 py-6 text-center text-gray-400 italic text-xs bg-gray-50/30">
+                                                            No projects assigned to this BU yet.
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div class="px-4 py-2 bg-gray-50 border-t border-gray-200">
+                                                <button @click="addConfigRow('project', b.BU)"
+                                                    class="text-indigo-600 font-semibold text-xs flex items-center gap-1 hover:underline px-2 py-1 rounded transition-colors">
+                                                    <i class="ri-add-line"></i> Add Project to {{ b.BU }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Unassigned Projects Warning -->
+                                    <div v-if="groupedProjects['Others']?.length > 0"
+                                        class="mt-6 bg-rose-50 rounded-xl border border-rose-100 overflow-hidden">
+                                        <div
+                                            class="px-4 py-3 border-b border-rose-100 bg-rose-50/50 flex items-center gap-2">
+                                            <i class="ri-alert-line text-rose-500"></i>
+                                            <h3 class="font-bold text-rose-700 text-sm uppercase tracking-wide">
+                                                Unassigned Projects</h3>
+                                        </div>
+                                        <div class="p-4">
+                                            <p class="text-xs text-rose-600 mb-3">These projects do not belong to any
+                                                defined BU. Please drag them to a BU or assign one.</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <div v-for="p in groupedProjects['Others']" :key="p.Code"
+                                                    class="bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2">
+                                                    {{ p.Code }}
+                                                    <select v-model="p.Status"
+                                                        class="border-none bg-transparent p-0 text-xs font-normal focus:ring-0 text-rose-400">
+                                                        <option value="W">W</option>
+                                                        <option value="O">O</option>
+                                                        <option value="X">X</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-4 flex justify-center">
+                                        <button @click="addConfigRow('project')"
+                                            class="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-gray-300 text-sm font-medium transition-all shadow-sm flex items-center gap-2">
+                                            <i class="ri-add-circle-line text-lg"></i> Create New Project Code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BU Settings -->
+                        <div v-show="settingsTab === 'bu'">
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <i class="ri-building-line text-indigo-600"></i> Business Units
+                                </h4>
+                                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-gray-50/50 border-b border-gray-200">
+                                            <tr>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                    BU Name</th>
+                                                <th
+                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">
+                                                    Order</th>
+                                                <th
+                                                    class="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider relative group border-b border-gray-200">
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            <tr v-for="(b, idx) in tempConfig.bu" :key="b._uid" draggable="true"
+                                                @dragstart="handleDragStart(idx)" @dragover.prevent
+                                                @drop="handleDrop(idx)"
+                                                class="cursor-move hover:bg-gray-50 transition-colors group">
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <i
+                                                            class="ri-drag-move-2-line text-gray-300 group-hover:text-gray-500"></i>
+                                                        <input v-model="b.BU"
+                                                            class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <input type="number" v-model="b.Order"
+                                                        class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center text-gray-500"
+                                                        readonly>
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <button @click="removeConfigRow('bu', idx)"
+                                                        class="text-gray-400 hover:text-rose-500 transition-colors p-1.5 rounded-md hover:bg-rose-50">
+                                                        <i class="ri-delete-bin-line text-lg"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <button @click="addConfigRow('bu')"
+                                            class="text-indigo-600 font-semibold text-sm flex items-center gap-1.5 hover:text-indigo-700 hover:underline px-2 py-1 rounded-md transition-colors">
+                                            <i class="ri-add-line"></i> Add New BU
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Real Connection Settings -->
+                        <div v-show="settingsTab === 'connection'" class="space-y-6">
+                            <!-- Add / Edit Config Form -->
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                                :class="{'ring-2 ring-amber-400 bg-amber-50': isEditingGas}">
+                                <h4 class="font-semibold text-sm text-gray-900 mb-3 flex items-center gap-2">
+                                    <i
+                                        :class="isEditingGas ? 'ri-edit-line text-amber-600' : 'ri-add-circle-line text-indigo-600'"></i>
+                                    {{ isEditingGas ? '編輯連線' : '新增連線' }}
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <input type="text" placeholder="名稱 (例: 正式環境)" v-model="gasForm.name"
+                                            class="px-3 py-2 text-sm border rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500">
+                                        <input type="password" placeholder="密碼/Token (選填)" v-model="gasForm.password"
+                                            class="px-3 py-2 text-sm border rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <input type="text" placeholder="GAS Web App URL (https://script.google.com/...)"
+                                        v-model="gasForm.url"
+                                        class="w-full px-3 py-2 text-sm border rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500 font-mono">
+
+                                    <div class="flex gap-2">
+                                        <button v-if="isEditingGas" @click="cancelEditGas"
+                                            class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors shadow-sm">
+                                            取消
+                                        </button>
+                                        <button @click="submitGasConfig"
+                                            class="flex-1 text-white px-4 py-2 rounded text-sm font-medium transition-colors shadow-sm"
+                                            :class="isEditingGas ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'">
+                                            {{ isEditingGas ? '更新設定' : '新增設定' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- List -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-end">
+                                    <h4 class="font-semibold text-sm text-gray-700">已儲存連線</h4>
+                                    <div class="flex gap-2">
+                                        <button @click="exportGasConfigs"
+                                            class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 transition-colors">
+                                            <i class="ri-download-line"></i> 匯出
+                                        </button>
+                                        <button @click="$refs.importInput.click()"
+                                            class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded flex items-center gap-1 transition-colors">
+                                            <i class="ri-upload-line"></i> 匯入
+                                        </button>
+                                        <input type="file" ref="importInput" @change="importGasConfigs"
+                                            accept=".txt,.json" class="hidden" />
+                                    </div>
+                                </div>
+                                <div v-if="gasConfigs.length === 0"
+                                    class="text-center py-4 text-gray-400 text-sm italic">
+                                    尚無設定，請先新增
+                                </div>
+                                <div v-for="(conf, idx) in gasConfigs" :key="conf.id"
+                                    class="flex flex-col bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow relative overflow-hidden"
+                                    :class="{'ring-2 ring-indigo-500 ring-offset-1': currentGasConfig && currentGasConfig.id === conf.id}">
+
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-gray-800">{{ conf.name }}</span>
+                                            <span v-if="currentGasConfig && currentGasConfig.id === conf.id"
+                                                class="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold">CURRENT</span>
+                                        </div>
+                                        <div class="flex gap-1">
+                                            <button @click="setActiveGasConfig(conf)"
+                                                v-if="!currentGasConfig || currentGasConfig.id !== conf.id"
+                                                class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded">
+                                                切換
+                                            </button>
+
+                                            <!-- Edit Button -->
+                                            <button @click="editGasConfig(conf)"
+                                                class="text-gray-400 hover:text-amber-500 p-1 transition-colors">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+
+                                            <!-- Delete Button -->
+                                            <button @click="() => {
+                                                if(confirm('確定刪除?')) {
+                                                    gasConfigs.splice(idx, 1);
+                                                    saveGasConfigs();
+                                                    if(currentGasConfig && currentGasConfig.id === conf.id) {
+                                                        setActiveGasConfig(gasConfigs.length > 0 ? gasConfigs[0] : null);
+                                                    }
+                                                }
+                                            }" class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 font-mono break-all truncate text-ellipsis">
+                                        {{ conf.url }}
+                                    </div>
+                                    <div v-if="conf.password"
+                                        class="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                        <i class="ri-key-2-line"></i> 密碼已儲存
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 z-10">
+                        <button @click="closeSettings"
+                            class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 text-sm font-medium transition-all shadow-sm">
+                            取消
+                        </button>
+                        <button @click="saveSettings"
+                            class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 active:bg-indigo-800 text-sm font-semibold transition-all flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="ri-save-line" :class="{'animate-spin': isSavingConfig}"></i>
+                            {{ isSavingConfig ? '套用中...' : '套用設定' }}
+                        </button>
+                    </div>
+                </div>
+        </div>
+        </transition>
+
+        <!-- Backdrop for Settings Overlay -->
+        <div v-if="showSettingsModal" @click="closeSettings"
+            class="absolute inset-0 bg-black/20 z-[60] transition-opacity">
+        </div>
+    </div> <!-- end flex-row wrapper -->
+
+    </div> <!-- end app root -->
+    <script>
+        const { createApp, ref, computed, onMounted, reactive, nextTick, watch } = Vue;
+
+        createApp({
+            setup() {
+                // D3 Polyfill (Must be first)
+                if (!window.d3) {
+                    window.d3 = {
+                        csv: async (url) => {
+                            console.warn("Polyfilled d3.csv called for", url);
+                            const res = await fetch(url);
+                            const text = await res.text();
+                            return parseCSV(text);
+                        }
+                    };
+                }
+
+                // ======== GAS Config & Multi-Connection ========
+                const gasConfigs = ref([]);
+                const currentGasConfig = ref(null);
+
+                // Form State for Add/Edit
+                const gasForm = reactive({
+                    id: null,
+                    name: '',
+                    url: '',
+                    password: ''
+                });
+
+                const isEditingGas = computed(() => !!gasForm.id);
+
+                const editGasConfig = (conf) => {
+                    gasForm.id = conf.id;
+                    gasForm.name = conf.name;
+                    gasForm.url = conf.url;
+                    gasForm.password = conf.password || '';
+
+                    // Scroll to top of settings modal
+                    const modalBody = document.querySelector('.custom-scrollbar');
+                    if (modalBody) modalBody.scrollTop = 0;
+                };
+
+                const cancelEditGas = () => {
+                    gasForm.id = null;
+                    gasForm.name = '';
+                    gasForm.url = '';
+                    gasForm.password = '';
+                };
+
+                const saveGasConfigs = () => {
+                    localStorage.setItem('gas_configs', JSON.stringify(gasConfigs.value));
+                };
+
+                const submitGasConfig = () => {
+                    if (!gasForm.name || !gasForm.url) {
+                        alert('請輸入名稱與 URL');
+                        return;
+                    }
+
+                    if (gasForm.id) {
+                        // Update existing
+                        const idx = gasConfigs.value.findIndex(c => c.id === gasForm.id);
+                        if (idx !== -1) {
+                            gasConfigs.value[idx] = { ...gasForm }; // Update
+                            if (currentGasConfig.value && currentGasConfig.value.id === gasForm.id) {
+                                currentGasConfig.value = gasConfigs.value[idx]; // Update active ref if same
+                            }
+                        }
+                    } else {
+                        // Create new
+                        const newConf = {
+                            id: Date.now().toString(),
+                            name: gasForm.name,
+                            url: gasForm.url,
+                            password: gasForm.password
+                        };
+                        gasConfigs.value.push(newConf);
+                        // Auto-select if first one
+                        if (!currentGasConfig.value) setActiveGasConfig(newConf);
+                    }
+
+                    saveGasConfigs();
+                    cancelEditGas(); // Reset form
+                };
+
+                const exportGasConfigs = () => {
+                    const dataStr = JSON.stringify(gasConfigs.value, null, 2);
+                    const blob = new Blob([dataStr], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'gas_configs_backup.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                const importGasConfigs = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const imported = JSON.parse(e.target.result);
+                            if (!Array.isArray(imported)) throw new Error('Invalid format: must be an array');
+
+                            let addedCount = 0;
+                            let updatedCount = 0;
+
+                            imported.forEach(newConf => {
+                                if (!newConf.name || !newConf.url) return;
+
+                                // Check for existing by ID or URL match
+                                const existingIdx = gasConfigs.value.findIndex(c => c.id === newConf.id || c.url === newConf.url);
+
+                                if (existingIdx !== -1) {
+                                    // Exist: Optional Prompt logic could go here, for now we merge/update if id matches, or skip?
+                                    // User logic: "Import merges unique URLs/Names".
+                                    // Let's adopt a safe merge: If ID exists, overwrite? Or generate new ID?
+                                    // Current Plan says: "If an imported ID exists, ask to overwrite. If not, add it."
+                                    // Simplifying for UX: Update existing by URL, Add new if unique.
+
+                                    // Let's just push unique ones based on URL to avoid duplicates
+                                    // Actually, if we want to restore settings, we might want to update passwords.
+                                    // Let's go with: Update if URL matches, Add if not.
+
+                                    // Simple logic:
+                                    const existing = gasConfigs.value[existingIdx];
+                                    if (confirm(`設定 "${newConf.name}" (${newConf.url}) 已存在，要覆蓋嗎?`)) {
+                                        gasConfigs.value[existingIdx] = { ...newConf, id: existing.id }; // Keep local ID but update content
+                                        updatedCount++;
+                                    }
+                                } else {
+                                    // Add new
+                                    gasConfigs.value.push({ ...newConf, id: newConf.id || Date.now().toString() + Math.random() });
+                                    addedCount++;
+                                }
+                            });
+
+                            saveGasConfigs();
+                            if (!currentGasConfig.value && gasConfigs.value.length > 0) {
+                                setActiveGasConfig(gasConfigs.value[0]);
+                            }
+                            alert(`匯入完成: 新增 ${addedCount} 筆, 更新 ${updatedCount} 筆`);
+                        } catch (err) {
+                            alert('匯入失敗: ' + err.message);
+                            console.error(err);
+                        }
+                        event.target.value = ''; // Reset input
+                    };
+                    reader.readAsText(file);
+                };
+
+                // Load saved configs
+                const loadGasConfigs = () => {
+                    try {
+                        const saved = localStorage.getItem('gas_configs');
+                        if (saved) {
+                            gasConfigs.value = JSON.parse(saved);
+                        } else {
+                            gasConfigs.value = [];
+                        }
+
+                        const lastId = localStorage.getItem('active_gas_id');
+                        if (lastId) {
+                            currentGasConfig.value = gasConfigs.value.find(c => c.id === lastId);
+                        }
+
+                        if (!currentGasConfig.value && gasConfigs.value.length > 0) {
+                            currentGasConfig.value = gasConfigs.value[0];
+                        }
+                    } catch (e) {
+                        console.error('Failed to load GAS configs', e);
+                    }
+                };
+
+                const setActiveGasConfig = (config) => {
+                    currentGasConfig.value = config;
+                    if (config) {
+                        localStorage.setItem('active_gas_id', config.id);
+                    } else {
+                        localStorage.removeItem('active_gas_id');
+                    }
+                    loadData();
+                };
+
+                loadGasConfigs();
+
+                // State
+                const rawData = ref([]);
+                const statusConf = ref([]);
+                const projectConf = ref([]);
+                const buConf = ref([]);
+
+                const isLocalFile = ref(window.location.protocol === 'file:');
+                const loadingError = ref('');
+                const isSaving = ref(false);
+
+                // Font Scale
+                const fontScale = ref('medium');
+                const fontSizes = { small: '15px', medium: '17px', large: '19px' };
+
+                const showModal = ref(false);
+                const editingItem = ref(null);
+                const isLoading = ref(false); // Global loading state
+                const form = reactive({
+                    project_code: '', client: '', bu: '', status: '', task_name: '',
+                    start_date: '', due_date: '', complete_date: '', recurrence: '', remark: ''
+                });
+
+                // Recurrence type/day computed - syncs with form.recurrence string (e.g. "weekly:3", "monthly:15", "quarterly")
+                const recurrenceType = computed({
+                    get: () => (form.recurrence || '').split(':')[0] || '',
+                    set: (val) => {
+                        if (!val) { form.recurrence = ''; return; }
+                        if (val === 'quarterly') { form.recurrence = 'quarterly'; return; }
+                        const day = (form.recurrence || '').split(':')[1] || '1';
+                        form.recurrence = val + ':' + day;
+                    }
+                });
+                const recurrenceDay = computed({
+                    get: () => (form.recurrence || '').split(':')[1] || '1',
+                    set: (val) => {
+                        const type = recurrenceType.value;
+                        if (type && type !== 'quarterly') form.recurrence = type + ':' + val;
+                    }
+                });
+
+                // Human-readable recurrence label
+                const WEEKDAYS = ['', '一', '二', '三', '四', '五', '六', '日'];
+                const recurrenceLabel = (rec) => {
+                    if (!rec) return '';
+                    const [type, day] = rec.split(':');
+                    if (type === 'weekly') return '每週' + (WEEKDAYS[+day] || day);
+                    if (type === 'biweekly') return '每雙週' + (WEEKDAYS[+day] || day);
+                    if (type === 'monthly') return '每月' + day + '號';
+                    if (type === 'quarterly') return '每季';
+                    return rec;
+                };
+
+                // Calculate next recurrence date from a given base date
+                const nextRecurrenceDate = (baseDate, rec) => {
+                    if (!baseDate || !rec) return null;
+                    const [type, day] = rec.split(':');
+                    const d = +day;
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+                    if (type === 'weekly' || type === 'biweekly') {
+                        // d = 1(Mon)..7(Sun), JS getDay = 0(Sun)..6(Sat)
+                        const targetDay = d === 7 ? 0 : d; // convert to JS day
+                        const next = new Date(baseDate);
+                        const diff = (targetDay - next.getDay() + 7) % 7;
+                        next.setDate(next.getDate() + (diff === 0 ? (type === 'biweekly' ? 14 : 7) : diff));
+                        while (next <= today) {
+                            next.setDate(next.getDate() + (type === 'biweekly' ? 14 : 7));
+                        }
+                        return next;
+                    }
+                    if (type === 'monthly') {
+                        const next = new Date(baseDate.getFullYear(), baseDate.getMonth(), d);
+                        if (next <= today) next.setMonth(next.getMonth() + 1);
+                        if (next <= today) next.setMonth(next.getMonth() + 1);
+                        return next;
+                    }
+                    if (type === 'quarterly') {
+                        const next = new Date(baseDate);
+                        next.setMonth(next.getMonth() + 3);
+                        while (next <= today) next.setMonth(next.getMonth() + 3);
+                        return next;
+                    }
+                    return null;
+                };
+
+                // Auto-advance recurring tasks: update due_date if overdue
+                const autoAdvanceRecurring = (data) => {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    let changed = false;
+                    data.forEach(item => {
+                        if (!item.recurrence || (item.complete_date && item.complete_date.trim())) return;
+                        const lines = (item.due_date || '').split('\n').map(l => l.trim()).filter(l => l);
+                        const lastLine = lines[lines.length - 1] || '';
+                        const base = parseDate(lastLine);
+                        if (!base || base > today) return;
+                        const next = nextRecurrenceDate(base, item.recurrence);
+                        if (next) {
+                            const y = String(next.getFullYear()).slice(2);
+                            const m = String(next.getMonth() + 1).padStart(2, '0');
+                            const dd = String(next.getDate()).padStart(2, '0');
+                            item.due_date = `${y}/${m}/${dd}`;
+                            changed = true;
+                        }
+                    });
+                    return changed;
+                };
+                const toast = reactive({ show: false, message: '' });
+                const showToast = (msg) => {
+                    toast.message = msg; toast.show = true;
+                    setTimeout(() => toast.show = false, 2500);
+                };
+
+                // ---- Data Loading ----
+                // Simple CSV parser - handles config CSVs (no multiline)
+                const parseSimpleCSV = (text) => {
+                    const lines = text.trim().split('\n');
+                    if (lines.length < 2) return [];
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    return lines.slice(1).map(line => {
+                        if (!line.trim()) return null;
+                        const v = line.split(',');
+                        return headers.reduce((acc, h, i) => ({ ...acc, [h]: v[i]?.trim() || '' }), {});
+                        // Filter out nulls from empty lines
+                    }).filter(Boolean);
+                };
+
+                // RFC 4180 compliant CSV parser - handles quoted multiline fields
+                const parseCSV = (text) => {
+                    const rows = [];
+                    let i = 0;
+                    const len = text.length;
+
+                    const parseField = () => {
+                        if (i >= len) return '';
+                        if (text[i] === '"') {
+                            // Quoted field
+                            i++; // skip opening quote
+                            let field = '';
+                            while (i < len) {
+                                if (text[i] === '"') {
+                                    if (i + 1 < len && text[i + 1] === '"') {
+                                        field += '"';
+                                        i += 2;
+                                    } else {
+                                        i++; // skip closing quote
+                                        break;
+                                    }
+                                } else {
+                                    field += text[i];
+                                    i++;
+                                }
+                            }
+                            return field;
+                        } else {
+                            // Unquoted field
+                            let field = '';
+                            while (i < len && text[i] !== ',' && text[i] !== '\n' && text[i] !== '\r') {
+                                field += text[i];
+                                i++;
+                            }
+                            return field;
+                        }
+                    };
+
+                    const parseRow = () => {
+                        const fields = [];
+                        while (i < len) {
+                            fields.push(parseField());
+                            if (i < len && text[i] === ',') {
+                                i++; // skip comma
+                            } else {
+                                break;
+                            }
+                        }
+                        // Skip line ending
+                        if (i < len && text[i] === '\r') i++;
+                        if (i < len && text[i] === '\n') i++;
+                        return fields;
+                    };
+
+                    // Skip BOM
+                    if (text.charCodeAt(0) === 0xFEFF) i = 1;
+
+                    // Parse header row
+                    const headers = parseRow().map(h => h.trim());
+                    if (headers.length === 0) return [];
+
+                    // Parse data rows
+                    while (i < len) {
+                        // Skip empty lines
+                        if (text[i] === '\n' || text[i] === '\r') {
+                            if (text[i] === '\r') i++;
+                            if (i < len && text[i] === '\n') i++;
+                            continue;
+                        }
+                        const fields = parseRow();
+                        if (fields.length === 0 || (fields.length === 1 && !fields[0].trim())) continue;
+                        const obj = {};
+                        headers.forEach((h, idx) => {
+                            obj[h] = (fields[idx] || '').trim();
+                        });
+                        rows.push(obj);
+                    }
+                    return rows;
+                };
+
+
+                // ======== Data Loading (GAS or Local CSV) ========
+                const loadViaLocal = async () => {
+                    console.log('DEBUG: loadViaLocal called');
+                    const fetchCSV = async (url) => {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+                        const text = await res.text();
+                        return parseCSV(text);
+                    };
+
+
+
+                    const [d, p, s, b] = await Promise.all([
+                        fetchCSV('data.csv?t=' + Date.now()),
+                        fetch('/api/config?type=project').then(r => r.json()).catch(async () => await fetchCSV('project.csv?t=' + Date.now())),
+                        fetch('/api/config?type=status').then(r => r.json()).catch(async () => await fetchCSV('status.csv?t=' + Date.now())),
+                        fetch('/api/config?type=bu').then(r => r.json()).catch(async () => await fetchCSV('bu.csv?t=' + Date.now()).catch(() => []))
+                    ]);
+
+                    rawData.value = d;
+                    projectConf.value = normalizeConfig('project', p);
+                    statusConf.value = normalizeConfig('status', s);
+                    buConf.value = normalizeConfig('bu', b);
+                }
+
+                const loadViaGAS = async () => {
+                    loadingError.value = `連線 Google Sheet (${currentGasConfig.value.name})...`;
+                    // Use configured URL
+                    const targetUrl = currentGasConfig.value.url;
+                    // Append password if present
+                    const password = currentGasConfig.value.password || '';
+                    const res = await fetch(`${targetUrl}?action=getAll&password=${encodeURIComponent(password)}`);
+                    if (!res.ok) throw new Error(`GAS 請求失敗 (${res.status})`);
+                    const json = await res.json();
+                    if (!json.success) throw new Error(json.error || 'GAS 回傳錯誤');
+
+                    statusConf.value = normalizeConfig('status', json.result.status).map(s => ({ ...s, Label: s.Label || s.Status }));
+                    if (json.result.bu) {
+                        buConf.value = normalizeConfig('bu', json.result.bu);
+                    }
+                    projectConf.value = normalizeConfig('project', json.result.project);
+                    return json.result.data || [];
+                };
+
+                const loadViaCSV = async () => {
+                    // Load status.csv
+                    loadingError.value = '載入 status.csv...';
+                    const sRes = await fetch('status.csv');
+                    if (sRes.ok) {
+                        let t = await sRes.text();
+                        if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+                        statusConf.value = parseSimpleCSV(t).map(s => ({ ...s, Label: s.Label || s.Status }));
+                        // statusConf.value.sort((a, b) => (Number(a.Order) || 99) - (Number(b.Order) || 99));
+                    }
+                    // Load project.csv
+                    loadingError.value = '載入 project.csv...';
+                    const pRes = await fetch('project.csv');
+                    if (pRes.ok) {
+                        const buf = await pRes.arrayBuffer();
+                        const u8 = new Uint8Array(buf);
+                        let t = (u8.length >= 2 && u8[0] === 0xFF && u8[1] === 0xFE)
+                            ? new TextDecoder('utf-16le').decode(buf)
+                            : new TextDecoder('utf-8').decode(buf);
+                        if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+                        projectConf.value = parseSimpleCSV(t);
+                    }
+                    // Load data.csv
+                    loadingError.value = '載入 data.csv...';
+                    const dRes = await fetch('data.csv');
+                    if (!dRes.ok) throw new Error(`data.csv 載入失敗 (${dRes.status})`);
+                    return parseCSV(await dRes.text());
+                };
+
+
+
+                const loadData = async () => {
+                    if (isLocalFile.value) return;
+
+                    isLoading.value = true; // Start loading animation
+
+                    try {
+                        loadingError.value = '載入完成';
+
+                        // Determine method
+                        let json = [];
+                        // Check if we have an active GAS configuration
+                        if (currentGasConfig.value && currentGasConfig.value.url) {
+                            try {
+                                json = await loadViaGAS();
+                            } catch (e) {
+                                console.warn('GAS failed, trying local if available', e);
+                                if (currentGasConfig.value.url.includes('script.google.com')) throw e;
+                                await loadViaLocal();
+                                return; // loadViaLocal sets state directly
+                            }
+                        } else {
+                            // convert local mode check
+                            // if no config, default to local CSV? or just wait?
+                            // Default behavior: try local
+                            await loadViaLocal();
+                            return; // loadViaLocal sets state directly
+                        }
+
+                        // Normalize row keys (Handle case/space differences from datasource)
+                        const normalizeRowKeys = (row) => {
+                            const normalized = {};
+                            for (const key in row) {
+                                // Lowercase and replace spaces/_ with underscore (e.g. "Start Date" -> "start_date")
+                                const normKey = key.toLowerCase().trim().replace(/[\s\-_]+/g, '_');
+                                normalized[normKey] = row[key];
+                            }
+                            // Direct mappings for common variants
+                            if (normalized.startdate) normalized.start_date = normalized.startdate;
+                            if (normalized.duedate) normalized.due_date = normalized.duedate;
+                            if (normalized.completedate) normalized.complete_date = normalized.completedate;
+                            if (normalized.taskname) normalized.task_name = normalized.taskname;
+                            if (normalized.projectcode) normalized.project_code = normalized.projectcode;
+                            return normalized;
+                        };
+
+                        // If we got json from GAS (loadViaGAS returns it)
+                        loadingError.value = 'Reading data...';
+                        setTimeout(async () => {
+                            try {
+                                const normalized = json.map(row => normalizeRowKeys(row));
+                                autoAdvanceRecurring(normalized);
+                                rawData.value = normalized;
+                                await nextTick();
+                                loadingError.value = normalized.length === 0 ? 'No Data Found' : '';
+                            } catch (renderErr) {
+                                console.error('Render error:', renderErr);
+                                loadingError.value = 'Render Error: ' + renderErr.message;
+                            }
+                        }, 50);
+                    } catch (e) {
+                        loadingError.value = 'Fetch Error: ' + e.message;
+                        console.error(e);
+                    } finally {
+                        // Ensure loading state is cleared even if error occurs
+                        // Add a small delay for smoother UX if load is too fast
+                        setTimeout(() => {
+                            isLoading.value = false;
+                        }, 300);
+                    }
+                };
+                const isCompleted = (status) => {
+                    if (!status || typeof status !== 'string') return false;
+                    return status.includes('完成') || status.toLowerCase().includes('done');
+                };
+
+                // ---- State ----
+                const collapsedBUs = reactive(new Set());
+                const collapsedGroups = reactive(new Set());
+                // const filterStatus = ref([]); // Replaced by Advanced Filtering
+                const groupBy = ref('project_code'); // Toggle: 'project_code' or 'client'
+
+                // ---- Advanced Filtering Engine (Exclusion Mode / Blacklist) ----
+                const filterFields = {
+                    bu: 'Business Unit',
+                    project_code: 'Project',
+                    client: 'Client',
+                    status: 'Status',
+                    owner: 'Assignee',
+                    complete_date: 'Completion'
+                };
+
+                // Stores EXCLUDED values. If a value is in this set, it is HIDDEN.
+                // Empty set = All Visible (Default).
+                const filterExclusions = reactive({
+                    bu: new Set(),
+                    project_code: new Set(),
+                    client: new Set(),
+                    status: new Set(),
+                    owner: new Set(),
+                    complete_date: new Set()
+                });
+
+                const activeDropdown = ref(null);
+                const filterGroups = ref([]);
+                const dropdownStyle = reactive({ top: '0px', left: '0px', width: '250px' });
+
+                // Click outside to close dropdowns
+                window.addEventListener('click', (e) => {
+                    // Check if click was inside a dropdown (which are now in Teleport/body)
+                    // We need to check if target is inside the dropdown element
+                    // But since dropdowns are stopped (@click.stop), this listener handles outside clicks.
+                    if (activeDropdown.value) {
+                        activeDropdown.value = null;
+                    }
+                });
+
+                const toggleDropdown = (field, evt) => {
+                    // console.log('toggleDropdown', field, evt); // Debug
+                    if (activeDropdown.value === field) {
+                        activeDropdown.value = null;
+                    } else {
+                        // Calculate position
+                        if (evt && evt.currentTarget) {
+                            const rect = evt.currentTarget.getBoundingClientRect();
+                            const top = rect.bottom + window.scrollY + 5; // offset
+                            let left = rect.left + window.scrollX;
+
+                            // Adjust if overflow right edge (simple check)
+                            if (left + 250 > window.innerWidth + window.scrollX) {
+                                left = window.innerWidth + window.scrollX - 260;
+                            }
+
+                            dropdownStyle.top = `${top}px`;
+                            dropdownStyle.left = `${left}px`;
+
+                            // Width adj for specific fields
+                            if (field === 'project_code' || field === 'client') dropdownStyle.width = '300px';
+                            else if (field === 'status') dropdownStyle.width = '240px';
+                            else dropdownStyle.width = '250px';
+                        }
+                        activeDropdown.value = field;
+                    }
+                };
+
+                // Toggle Visibility:
+                // If currently visible (not in exclusion) -> Add to exclusion (Hide)
+                // If currently hidden (in exclusion) -> Remove from exclusion (Show)
+                const toggleFilter = (field, value) => {
+                    const exclusion = filterExclusions[field];
+                    if (exclusion.has(value)) {
+                        exclusion.delete(value); // Show it
+                    } else {
+                        exclusion.add(value); // Hide it
+                    }
+                };
+
+                // "Select All" = Clear Exclusions = Show Everything
+                const clearFilter = (field) => {
+                    filterExclusions[field].clear();
+                };
+
+                // "Unselect All" = Add All to Exclusions = Hide Everything
+                const hideAllFilter = (field) => {
+                    const opts = availableOptions.value[field] || [];
+                    opts.forEach(o => filterExclusions[field].add(o));
+                }
+
+                const clearAllFilters = () => {
+                    Object.keys(filterExclusions).forEach(key => filterExclusions[key].clear());
+                };
+
+                const hasActiveFilters = computed(() => {
+                    return Object.values(filterExclusions).some(s => s.size > 0);
+                });
+
+                // Get all valid options from rawData
+                const availableOptions = computed(() => {
+                    const options = {};
+
+                    // Build Status Order Map
+                    const sOrderMap = {};
+                    if (statusConf.value) {
+                        statusConf.value.forEach(s => sOrderMap[s.Status] = Number(s.Order) || 99);
+                    }
+
+                    Object.keys(filterFields).forEach(field => {
+                        const values = new Set();
+                        rawData.value.forEach(row => {
+                            if (field === 'status') {
+                                values.add(getEffectiveStatus(row));
+                            } else if (field === 'complete_date') {
+                                // Simplified Date Filter: Has Date vs No Date
+                                const raw = row[field];
+                                const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+                                values.add(hasDate ? '有日期' : '無日期');
+                            } else if (field === 'start_date' || field === 'due_date') {
+                                const raw = row[field];
+                                const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+                                if (!hasDate) values.add('None');
+                                else values.add(getLastDate(raw));
+                            } else {
+                                if (row[field]) values.add(row[field]);
+                                else values.add('None');
+                            }
+                        });
+
+                        if (field === 'status') {
+                            options[field] = Array.from(values).sort((a, b) => {
+                                const oa = sOrderMap[a] !== undefined ? sOrderMap[a] : 99;
+                                const ob = sOrderMap[b] !== undefined ? sOrderMap[b] : 99;
+                                return oa - ob;
+                            });
+                        } else if (field === 'complete_date') {
+                            // Fixed order
+                            options[field] = ['有日期', '無日期'];
+                        } else {
+                            // Default sort
+                            options[field] = Array.from(values).sort();
+                        }
+                    });
+                    return options;
+                });
+
+                // Cascade Logic: Check if option is valid given other selections
+                // Cascade Logic: Check if option is valid given other selections
+                const isOptionValid = (targetField, value) => {
+                    // Check if a row exists that matches:
+                    return rawData.value.some(row => {
+                        // 1. Check target field match first
+                        let rowVal;
+                        if (targetField === 'status') {
+                            rowVal = getEffectiveStatus(row);
+                        } else if (targetField === 'complete_date') {
+                            const raw = row[targetField];
+                            const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+                            rowVal = hasDate ? '有日期' : '無日期';
+                        } else if (targetField === 'start_date' || targetField === 'due_date') {
+                            // Special handling for date fields matching
+                            const raw = row[targetField];
+                            const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+                            if (!hasDate) rowVal = 'None';
+                            else rowVal = getLastDate(raw);
+                        } else {
+                            rowVal = row[targetField] || 'None';
+                        }
+
+                        if (rowVal !== value) return false;
+
+                        // 2. Check other fields (Cascade)
+                        return Object.keys(filterFields).every(field => {
+                            if (field === targetField) return true; // Skip self
+                            if (filterExclusions[field].size === 0) return true; // No filter (All shown)
+
+                            let fVal;
+                            if (field === 'status') {
+                                fVal = getEffectiveStatus(row);
+                            } else if (field === 'complete_date') {
+                                const raw = row[field];
+                                const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+                                fVal = hasDate ? '有日期' : '無日期';
+                            } else if (field === 'start_date' || field === 'due_date') {
+                                // Match Logic in passesFilters
+                                const raw = row[field];
+                                const hasDate = raw && raw.trim() !== '' && raw.trim() !== 'X' && raw.trim() !== 'x' && raw.trim() !== '(0)';
+
+                                if (!hasDate && filterExclusions[field].has('None')) return false;
+                                if (hasDate && filterExclusions[field].has(getLastDate(raw))) return false;
+                                return true;
+                            } else {
+                                fVal = row[field] || 'None';
+                            }
+
+                            return !filterExclusions[field].has(fVal);
+                        });
+                    });
+                };
+
+                // Main Filter Logic (Exclusion)
+                const passesFilters = (row) => {
+                    return Object.keys(filterFields).every(field => {
+                        if (filterExclusions[field].size === 0) return true;
+
+                        let rowVal;
+                        if (field === 'status') {
+                            rowVal = getEffectiveStatus(row);
+                        } else if (field === 'complete_date') {
+                            // Special logic for "Has Date" vs "No Date"
+                            const hasDate = row.complete_date && row.complete_date.trim() !== '' && row.complete_date.trim() !== 'X' && row.complete_date.trim() !== 'x';
+
+                            // Map row state to virtual option
+                            const virtualOption = hasDate ? '有日期' : '無日期';
+                            rowVal = virtualOption;
+                        } else {
+                            // Normalize empty/null to 'None' to match availableOptions behavior
+                            const rawVal = row[field];
+                            rowVal = (rawVal || rawVal === 0) ? rawVal : 'None';
+                        }
+
+                        // Pass if NOT excluded
+                        return !filterExclusions[field].has(rowVal);
+                    });
+                };
+
+                // ---- BU Constants ----
+                const BU_ORDER = ['Power Tool', 'Fitness', 'Bike', 'PT', 'FT', 'BK', 'MK', 'Others'];
+                const BU_LABELS = {};
+                const BU_COLORS = ['blue', 'emerald', 'orange', 'purple', 'rose', 'cyan', 'amber', 'teal'];
+                const BU_STYLES = {}; // Deprecated: Unified style used instead
+
+                // ---- Grouping Logic: BU > project_code/client (toggleable) ----
+                const buSections = computed(() => {
+                    try {
+                        // 1. Filter out header rows, apply ADVANCED filters
+                        const items = rawData.value.filter(row => {
+                            if (!row || !row.task_name) return false;
+                            if (row.status === '標題行') return false;
+
+                            // Apply new filter logic
+                            return passesFilters(row);
+                        });
+
+                        // 2. Group by BU (from data's bu field directly)
+                        const buMap = {};
+                        items.forEach(item => {
+                            const bu = item.bu || 'Others';
+                            if (!buMap[bu]) buMap[bu] = [];
+                            buMap[bu].push(item);
+                        });
+
+                        // 3. Build project.csv status map for sorting sub-groups
+                        const pStatusMap = {};
+                        if (projectConf.value && Array.isArray(projectConf.value)) {
+                            projectConf.value.forEach(p => {
+                                if (p && p.Code) pStatusMap[p.Code] = parseInt(p.Status) || 5;
+                            });
+                        }
+
+                        // 3.5 Build Status Order map for sorting items
+                        const sOrderMap = {};
+                        if (statusConf.value) {
+                            statusConf.value.forEach(s => sOrderMap[s.Status] = Number(s.Order) || 99);
+                        }
+
+                        // 4. For each BU, sub-group by groupBy field
+                        const field = groupBy.value; // 'project_code' or 'client'
+                        const sections = Object.keys(buMap).map(bu => {
+                            const subGroupMap = {};
+                            buMap[bu].forEach(item => {
+                                const key = item[field] || '未分類';
+                                if (!subGroupMap[key]) subGroupMap[key] = { id: bu + '/' + key, name: key, items: [], completedCount: 0 };
+                                subGroupMap[key].items.push(item);
+                                if (isCompleted(getEffectiveStatus(item))) subGroupMap[key].completedCount++;
+                            });
+
+                            // Sort items in each group by Status Order
+                            Object.values(subGroupMap).forEach(g => {
+                                g.items.sort((a, b) => {
+                                    const sa = getEffectiveStatus(a);
+                                    const sb = getEffectiveStatus(b);
+                                    const oa = sOrderMap[sa] !== undefined ? sOrderMap[sa] : 99;
+                                    const ob = sOrderMap[sb] !== undefined ? sOrderMap[sb] : 99;
+                                    return oa - ob;
+                                });
+                            });
+
+                            // Sort sub-groups by project.csv status (ascending)
+                            const groups = Object.values(subGroupMap).sort((a, b) => {
+                                const sa = pStatusMap[a.name] || 5;
+                                const sb = pStatusMap[b.name] || 5;
+                                if (sa !== sb) return sa - sb;
+                                return (a.name || '').localeCompare(b.name || '');
+                            });
+
+                            const totalItems = groups.reduce((sum, g) => sum + g.items.length, 0);
+                            const style = { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' };
+                            return {
+                                name: bu,
+                                label: BU_LABELS[bu] || bu,
+                                groups,
+                                totalItems,
+                                bgClass: style.bg,
+                                textClass: style.text,
+                                borderClass: style.border,
+                            };
+                        });
+
+                        // Sort BU sections by BU_ORDER
+                        // Sort BU sections by BU_ORDER (Dynamic from buConf or Fallback)
+                        sections.sort((a, b) => {
+                            // 1. Try to find order in buConf
+                            let oa = 999, ob = 999;
+                            if (buConf.value.length > 0) {
+                                const confA = buConf.value.find(c => c.bu === a.name);
+                                const confB = buConf.value.find(c => c.bu === b.name);
+                                if (confA) oa = Number(confA.Order) || 999;
+                                if (confB) ob = Number(confB.Order) || 999;
+                            }
+
+                            // 2. Fallback to hardcoded BU_ORDER if both are 999 (not found in conf)
+                            if (oa === 999 && ob === 999) {
+                                const ia = BU_ORDER.indexOf(a.name);
+                                const ib = BU_ORDER.indexOf(b.name);
+                                oa = (ia === -1 ? 999 : ia);
+                                ob = (ib === -1 ? 999 : ib);
+                            }
+
+                            return oa - ob;
+                        });
+
+                        // Inject Global Visual Sequence (1-N based on final sorted order)
+                        let globalSeq = 1;
+                        sections.forEach(sec => {
+                            if (sec.groups) {
+                                sec.groups.forEach(grp => {
+                                    if (grp.items) {
+                                        grp.items.forEach(item => {
+                                            item._globalSequence = globalSeq++;
+                                        });
+                                    }
+                                });
+                            }
+                        });
+
+                        return sections.filter(s => s.totalItems > 0);
+                    } catch (e) {
+                        console.error("buSections computation error", e);
+                        return [];
+                    }
+                });
+
+                // ---- Filter UI Logic Removed (Replaced by Advanced Filtering) ----
+
+                const toggleBU = (name) => {
+                    if (collapsedBUs.has(name)) collapsedBUs.delete(name);
+                    else collapsedBUs.add(name);
+                };
+                const isBUCollapsed = (name) => collapsedBUs.has(name);
+
+                const toggleGroup = (id) => {
+                    if (collapsedGroups.has(id)) collapsedGroups.delete(id);
+                    else collapsedGroups.add(id);
+                };
+                const isGroupCollapsed = (id) => collapsedGroups.has(id);
+
+
+                // ---- Undo/Redo History ----
+                const history = ref([]);
+                const historyIndex = ref(-1);
+                const MAX_HISTORY = 50;
+                const hasUnsavedChanges = ref(false);
+
+                const saveState = () => {
+                    // Deep copy current rawData
+                    const state = JSON.parse(JSON.stringify(rawData.value));
+
+                    // If we are in the middle of history, discard future
+                    if (historyIndex.value < history.value.length - 1) {
+                        history.value = history.value.slice(0, historyIndex.value + 1);
+                    }
+
+                    history.value.push(state);
+                    if (history.value.length > MAX_HISTORY) history.value.shift();
+
+                    historyIndex.value = history.value.length - 1;
+                };
+
+                const undo = () => {
+                    if (historyIndex.value > 0) {
+                        historyIndex.value--;
+                        rawData.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]));
+                        // saveData(); // Batch Save: Don't persist immediately
+                        hasUnsavedChanges.value = true;
+                        showToast('已復原 (Undo)');
+                    }
+                };
+
+                const redo = () => {
+                    if (historyIndex.value < history.value.length - 1) {
+                        historyIndex.value++;
+                        rawData.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]));
+                        // saveData(); // Batch Save: Don't persist immediately
+                        hasUnsavedChanges.value = true;
+                        showToast('已重做 (Redo)');
+                    }
+                };
+
+                // ---- Event Listeners ----
+                onMounted(() => {
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                            e.preventDefault();
+                            undo();
+                        }
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                            e.preventDefault();
+                            redo();
+                        }
+                    });
+                });
+
+                // Auto-status logic: project status and complete_date override stored status
+                const getEffectiveStatus = (item) => {
+                    if (!item) return '';
+
+                    // 1. Check project-level status (O=Project Done, X=Project Paused) - HIGHEST PRIORITY
+                    if (projectConf.value && item.project_code) {
+                        const proj = projectConf.value.find(p => p.Code === item.project_code);
+                        if (proj) {
+                            // Support both new (O/X) and old (9/10) formats
+                            const status = String(proj.Status).toUpperCase();
+                            if (status === 'X' || status === '10') return '專案暫停';
+                            if (status === 'O' || status === '9') return '專案完成';
+                        }
+                    }
+
+                    // 2. Check for Task Paused (Complete Date = 'X' or 'x')
+                    if (item.complete_date && (item.complete_date.trim() === 'X' || item.complete_date.trim() === 'x')) {
+                        return '任務暫停';
+                    }
+
+                    // Check task-level completion
+                    if (item.complete_date && item.complete_date.trim()) {
+                        // If client === project_code, treat as project-level completion
+                        if (item.client && item.project_code && item.client === item.project_code) return '專案完成';
+                        return '任務完成';
+                    }
+                    // Fallback to stored status
+                    return item.status || '';
+                };
+
+                const getStatusStyle = (status) => {
+                    if (!status) return { backgroundColor: '#E5E7EB', color: '#000000' };
+
+                    // Special styling for Task Paused if not in CSV
+                    if (status === '任務暫停') return { backgroundColor: '#FEE2E2', color: '#991B1B' }; // Red-100/800
+                    if (status === '任務完成' || status === '未完成') return { backgroundColor: '#D1FAE5', color: '#065F46' }; // Green-100/800
+
+                    const conf = statusConf.value.find(c => c.Status === status);
+                    if (!conf) return { backgroundColor: '#E5E7EB', color: '#000000' };
+                    return {
+                        backgroundColor: conf.BgColor || '#E5E7EB',
+                        color: conf.TextColor || '#000000'
+                    };
+                };
+
+
+
+                // Helper to format date HTML for display
+                const formatDateHtml = (html) => {
+                    if (!html) return '';
+                    // If exact match 'X' or 'x', return directly
+                    if (html === 'X' || html === 'x') return html;
+
+                    return html.replace(/\n/g, '<br/>')
+                        .replace(/(\d{2}\/\d{2}\/\d{2})/g, '<span class="font-mono">$1</span>');
+                };
+
+                // Helper to format due date with strikethrough for history
+                const formatDueDateWithHistory = (item) => {
+                    if (!item) return '';
+                    const raw = item.due_date || '';
+                    if (!raw || raw === '(0)') return '';
+                    const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+                    if (lines.length <= 1) return formatDateHtml(raw);
+
+                    // All but last = history (strikethrough), last = current
+                    // Only show last 3 history items
+                    const allHistory = lines.slice(0, -1);
+                    const showHistory = allHistory.slice(-3); // Take last 3
+
+                    const historyHtml = showHistory.map(d => `<span class="line-through text-gray-400 text-xs">${d}</span>`);
+                    if (allHistory.length > 3) {
+                        historyHtml.unshift('<span class="text-gray-300 text-xs">...</span>');
+                    }
+
+                    const current = lines[lines.length - 1];
+                    return [...historyHtml, current].join('<br>');
+                };
+
+                // ---- Utils ----
+                const getLastDate = (str) => {
+                    if (!str) return '';
+                    // If 'X' or 'x', return null/empty because it's not a date
+                    if (str.trim() === 'X' || str.trim() === 'x') return '';
+
+                    const lines = str.trim().split('\n');
+                    return lines[lines.length - 1];
+                };
+                // Parse YY/MM/DD, YYYY/MM/DD, YY-MM-DD, YYYY-MM-DD
+                // AND Support Short inputs: YYMMDD, YYYYMMDD, MMDD
+                const parseDate = (str) => {
+                    if (!str) return null;
+                    let clean = str.trim();
+
+                    // Pre-processing for shorthand inputs
+                    // 6 digits: 250101 -> 25/01/01
+                    if (/^\d{6}$/.test(clean)) {
+                        clean = `${clean.slice(0, 2)}/${clean.slice(2, 4)}/${clean.slice(4, 6)}`;
+                    }
+                    // 8 digits: 20250101 -> 2025/01/01
+                    else if (/^\d{8}$/.test(clean)) {
+                        clean = `${clean.slice(0, 4)}/${clean.slice(4, 6)}/${clean.slice(6, 8)}`;
+                    }
+                    // 4 digits: 0101 -> CurrentYear/01/01
+                    else if (/^\d{4}$/.test(clean)) {
+                        const year = new Date().getFullYear();
+                        clean = `${year}/${clean.slice(0, 2)}/${clean.slice(2, 4)}`;
+                    }
+
+                    // Supports slashes / or dashes -
+                    const parts = clean.match(/(\d{2,4})[-\/](\d{2})[-\/](\d{2})/);
+                    if (!parts) return null;
+                    let year = parseInt(parts[1]);
+                    if (year < 100) year += 2000;
+                    return new Date(year, parseInt(parts[2]) - 1, parseInt(parts[3]));
+                };
+
+                // Helper to convert storage format to input-ready YYYY-MM-DD
+                const toInputDate = (str) => {
+                    if (!str || str.trim() === 'X' || str.trim() === 'x') return '';
+                    try {
+                        const lines = str.trim().split('\n');
+                        const last = lines[lines.length - 1].trim();
+                        const date = parseDate(last);
+                        if (!date || isNaN(date.getTime())) return '';
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const d = String(date.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    } catch (e) {
+                        return '';
+                    }
+                };
+
+                // Helper to convert input (any format) back to storage YY/MM/DD
+                const fromInputDate = (str) => {
+                    if (!str) return '';
+                    const date = parseDate(str);
+                    if (!date || isNaN(date.getTime())) return str; // Return as-is if parse fails (allows X)
+
+                    const y = String(date.getFullYear()).slice(2); // YY
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}/${m}/${d}`;
+                };
+                const dayDiff = (d1, d2) => {
+                    const t1 = d1.getTime();
+                    const t2 = d2.getTime();
+                    return Math.round((t1 - t2) / (1000 * 3600 * 24));
+                };
+                const getCountdown = (item) => {
+                    try {
+                        const compDateRaw = item.complete_date ? item.complete_date.trim() : '';
+                        const dueDateRaw = item.due_date ? item.due_date.trim() : '';
+
+                        // 1. Task Paused
+                        if (compDateRaw === 'X' || compDateRaw === 'x') return '暫停中';
+
+                        // 2. Is Completed? (Check if there is a valid date)
+                        const compStr = getLastDate(compDateRaw);
+
+                        if (compStr) {
+                            // ---- DONE Mode ----
+                            // Logic: Actual - Due
+                            // Positive = Overdue (延遲)
+                            // Negative = Early (提早)
+                            const dueStr = getLastDate(dueDateRaw);
+                            if (!dueStr) return '';
+
+                            const due = parseDate(dueStr);
+                            const comp = parseDate(compStr);
+                            if (!due || !comp) return '';
+
+                            const diff = dayDiff(comp, due);
+
+                            if (diff > 0) return `延遲 ${Math.abs(diff)} 天`;
+                            if (diff < 0) return `提早 ${Math.abs(diff)} 天`;
+                            return '準時完成';
+                        } else {
+                            // ---- ACTIVE Mode ----
+                            // Logic: Due - today
+                            // Positive = Countdown (倒數)
+                            // Negative = Overdue (延遲)
+                            const dueStr = getLastDate(dueDateRaw);
+                            if (!dueStr) return '';
+
+                            const due = parseDate(dueStr);
+                            if (!due) return '';
+
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+
+                            const diff = dayDiff(due, today);
+
+                            if (diff > 0) return `倒數 ${diff} 天`;
+                            if (diff < 0) return `延遲 ${Math.abs(diff)} 天`;
+                            return '今天到期';
+                        }
+                    } catch (err) {
+                        console.warn("getCountdown error", item, err);
+                    }
+                    return '';
+                };
+                const getCountdownColor = (item) => {
+                    const txt = getCountdown(item);
+                    if (!txt) return '';
+                    if (txt === '暫停中') return 'text-gray-400 font-bold';
+                    if (txt.includes('延遲')) return 'text-rose-600 font-bold'; // Red
+                    if (txt.includes('提早')) return 'text-emerald-600 font-bold'; // Green
+                    if (txt.includes('倒數')) return 'text-blue-600 font-bold'; // Blue
+                    if (txt.includes('準時') || txt.includes('到期')) return 'text-amber-600 font-bold';
+                    return 'text-gray-500';
+                };
+
+                // Normalizer for config data (fix case mismatches from GAS/CSV)
+                const normalizeConfig = (type, data) => {
+                    if (!Array.isArray(data)) return [];
+                    return data.map(item => {
+                        const newItem = {};
+                        if (type === 'status') {
+                            newItem.Status = item.Status || item.status || '';
+                            newItem.BgColor = item.BgColor || item.bgcolor || '';
+                            newItem.TextColor = item.TextColor || item.textcolor || '';
+                            newItem.Order = item.Order || item.order || '';
+                        } else if (type === 'project') {
+                            newItem.Code = item.Code || item.code || '';
+                            newItem.Status = item.Status || item.status || 'W';
+                            // Backend uses 'Bu' and 'SOrder', map to internal 'BU' and 'Order'
+                            // Defensive check for case variations
+                            newItem.BU = item.BU || item.Bu || item.bu || '';
+                            if (!newItem.BU) {
+                                console.warn('Normalized Project missing BU:', item);
+                            }
+                            newItem.Order = Number(item.Order || item.order) || 50;
+                            // Auto-fix: O=98, X=99 on load
+                            if (newItem.Status === 'O') newItem.Order = 98;
+                            else if (newItem.Status === 'X') newItem.Order = 99;
+                        } else if (type === 'bu') {
+                            newItem.BU = item.BU || item.Bu || item.bu || '';
+                            newItem.Order = item.Order || item.order || '';
+                        }
+                        return newItem;
+                    });
+                };
+
+                // ---- Settings Modal Logic ----
+                const showSettingsModal = ref(false);
+                const settingsTab = ref('status');
+                const tempConfig = reactive({
+                    status: [],
+                    project: [],
+                    bu: []
+                });
+                const isSavingConfig = ref(false);
+
+                const openSettings = async () => {
+                    try {
+                        // Deep copy current configs to temp
+                        // Inject stable _uid for key stability (fixes input focus loss)
+                        const addUid = (list) => (list || []).map(item => ({ ...item, _uid: Math.random().toString(36).substr(2, 9) }));
+
+                        tempConfig.status = addUid(JSON.parse(JSON.stringify(statusConf.value)));
+                        tempConfig.project = addUid(JSON.parse(JSON.stringify(projectConf.value)));
+                        tempConfig.bu = addUid(JSON.parse(JSON.stringify(buConf.value)))
+                            .sort((a, b) => (Number(a.Order) || 99) - (Number(b.Order) || 99));
+                        showSettingsModal.value = true;
+                    } catch (e) {
+                        alert('儲存設定錯誤: ' + e.message);
+                        console.error('Settings Error:', e);
+                        // Fallback to empty if copy fails
+                        tempConfig.status = [];
+                        tempConfig.project = [];
+                        tempConfig.bu = [];
+                        showSettingsModal.value = true;
+                    }
+                };
+
+                const closeSettings = () => {
+                    showSettingsModal.value = false;
+                };
+
+                const addConfigRow = (type) => {
+                    if (type === 'status') {
+                        tempConfig.status.push({ Status: 'New Status', BgColor: '#E5E7EB', TextColor: '#000000', Order: 99, _uid: Math.random().toString(36) });
+                    } else if (type === 'project') {
+                        tempConfig.project.push({ Code: 'NEW_PROJ', Status: 1, BU: 'New BU', _uid: Math.random().toString(36) });
+                    } else if (type === 'bu') {
+                        tempConfig.bu.push({ BU: 'New BU', Order: 99, _uid: Math.random().toString(36) });
+                    }
+                };
+
+                const removeConfigRow = (type, index) => {
+                    if (type === 'status') tempConfig.status.splice(index, 1);
+                    else if (type === 'project') tempConfig.project.splice(index, 1);
+                    else if (type === 'bu') tempConfig.bu.splice(index, 1);
+                };
+
+                const saveSettings = async () => {
+                    isSavingConfig.value = true;
+                    try {
+                        // Save all 3 configs sequentially
+                        const promises = [
+                            saveConfigToServer('status', tempConfig.status),
+                            saveConfigToServer('project', tempConfig.project),
+                            saveConfigToServer('bu', tempConfig.bu)
+                        ];
+
+                        // If GAS is used, also try to sync to GAS
+                        if (GAS_URL) {
+                            promises.push(saveConfigToGAS('saveStatus', tempConfig.status));
+                            promises.push(saveConfigToGAS('saveProject', tempConfig.project));
+                            promises.push(saveConfigToGAS('saveBu', tempConfig.bu));
+                        }
+
+                        await Promise.all(promises);
+
+                        // Update local state
+                        statusConf.value = JSON.parse(JSON.stringify(tempConfig.status));
+                        projectConf.value = JSON.parse(JSON.stringify(tempConfig.project));
+                        buConf.value = JSON.parse(JSON.stringify(tempConfig.bu));
+
+                        showToast('設定已儲存', 'success');
+                        closeSettings();
+
+                        // Reload data to reflect changes (esp if project/status mapping changed)
+                        await loadData();
+
+                    } catch (e) {
+                        alert('儲存設定錯誤: ' + e.message);
+                    } finally {
+                        isSavingConfig.value = false;
+                    }
+                };
+
+                const saveConfigToServer = async (type, data) => {
+                    try {
+                        const response = await fetch(`/api/save_config?type=${type}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) throw new Error(`Failed to save ${type} to Local`);
+                    } catch (e) {
+                        // Ignore local save errors (likely GAS environment), prevent Promise.all failure
+                        console.debug('Local save skipped:', e);
+                    }
+                };
+
+                const saveConfigToGAS = async (action, data) => {
+                    if (!GAS_URL) return; // Skip if no GAS URL
+
+                    // Prepare payload (fix column mapping for Project sheet)
+                    let payloadData = data;
+                    if (action === 'saveProject') {
+                        payloadData = data.map(p => ({
+                            Code: p.Code,
+                            Order: p.Order, // Backend now expects 'Order'
+                            Status: p.Status,
+                            Bu: p.BU        // Map frontend 'BU' to GAS 'Bu'
+                        }));
+                    }
+
+                    const payload = {
+                        action: action,
+                        data: payloadData
+                    };
+
+                    try {
+                        const response = await fetch(GAS_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' }, // Avoid preflight by using text/plain
+                            body: JSON.stringify(payload)
+                        });
+                        const res = await response.json();
+                        if (!res.success) console.warn(`GAS Sync failed for ${action}:`, res.error);
+                    } catch (err) {
+                        console.error(`GAS Sync error for ${action}:`, err);
+                    }
+                };
+
+                // ---- Actions ----
+                const openAddModal = () => {
+                    Object.keys(form).forEach(k => form[k] = '');
+                    // Default start date today (YY/MM/DD)
+                    const now = new Date();
+                    form.start_date = `${String(now.getFullYear()).slice(2)}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+                    editingItem.value = null;
+                    syncBuffers(); // Initialize buffers
+                    showModal.value = true;
+                };
+
+                const editItem = (item) => {
+                    editingItem.value = item;
+                    Object.assign(form, item);
+                    syncBuffers(); // Initialize buffers
+                    showModal.value = true;
+                };
+
+                // Computed: split form.due_date into history lines and current editable date
+                const dueDateHistory = computed(() => {
+                    // Split raw to detect trailing newlines
+                    const lines = (form.due_date || '').split('\n');
+                    if (lines.length <= 1) return [];
+                    // History is everything except the last line (current)
+                    return lines.slice(0, -1).map(l => l.trim()).filter(l => l);
+                });
+                // Computed for Start Date Input (Bidirectional conversion)
+                const startDateInput = computed({
+                    get: () => toInputDate(form.start_date),
+                    set: (val) => { form.start_date = fromInputDate(val); }
+                });
+
+                const dueDateCurrent = computed({
+                    get: () => toInputDate(form.due_date),
+                    set: (val) => {
+                        const lines = (form.due_date || '').split('\n');
+                        const formatted = fromInputDate(val);
+                        if (lines.length > 0) {
+                            lines[lines.length - 1] = formatted;
+                            form.due_date = lines.join('\n');
+                        } else {
+                            form.due_date = formatted;
+                        }
+                    }
+                });
+
+                // Due date versioning: append current date as history line, clear for new input
+                // Due date versioning: append current date as history line, clear for new input
+                const addDueDateRevision = () => {
+                    const current = dueDateCurrent.value?.trim();
+                    if (!current) {
+                        alert('當前沒有截止日期，無需建立歷史記錄');
+                        return;
+                    }
+                    // Append current as a new line (it becomes history), add empty for new input
+                    form.due_date = (form.due_date || '').trim() + '\n';
+                    // Focus the input after Vue re-renders
+                    nextTick(() => {
+                        const input = document.querySelector('input[placeholder="YY/MM/DD"]');
+                        if (input) {
+                            input.value = '';
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            input.focus();
+                        }
+                    });
+                };
+
+                // ---- Settings Drag & Drop Sorting ----
+                let draggedItemIndex = null;
+                const handleDragStart = (idx) => { draggedItemIndex = idx; };
+                const handleDrop = (targetIdx) => {
+                    if (draggedItemIndex === null || draggedItemIndex === targetIdx) return;
+                    const item = tempConfig.bu.splice(draggedItemIndex, 1)[0];
+                    tempConfig.bu.splice(targetIdx, 0, item);
+                    // Automatically re-assign Order values (1-based)
+                    tempConfig.bu.forEach((b, i) => b.Order = i + 1);
+                    draggedItemIndex = null;
+                };
+
+                // Computed: Unique Client List for Datalist
+                const uniqueClients = computed(() => {
+                    const clients = new Set();
+                    rawData.value.forEach(row => {
+                        if (row.client && row.client.trim()) {
+                            clients.add(row.client.trim());
+                        }
+                    });
+                    return Array.from(clients).sort();
+                });
+
+
+                // ---- Date Input Buffer Pattern (Fix "Fighting" Behavior) ----
+                const startDateBuffer = ref('');
+                const dueDateBuffer = ref('');
+                const completeDateBuffer = ref('');
+
+                const syncBuffers = () => {
+                    startDateBuffer.value = toInputDate(form.start_date);
+                    dueDateBuffer.value = toInputDate(form.due_date); // Gets current (last line)
+                    completeDateBuffer.value = toInputDate(form.complete_date);
+                };
+
+                const commitStartDate = () => {
+                    // Parse buffer -> Format -> Update Form -> Sync Buffer back
+                    const val = startDateBuffer.value;
+                    const formatted = fromInputDate(val);
+                    form.start_date = formatted;
+                    startDateBuffer.value = toInputDate(formatted);
+                };
+
+                const commitDueDate = () => {
+                    const val = dueDateBuffer.value;
+                    const formatted = fromInputDate(val);
+
+                    // Logic from original dueDateCurrent setter:
+                    const lines = (form.due_date || '').split('\n');
+                    if (lines.length > 0) {
+                        lines[lines.length - 1] = formatted;
+                        form.due_date = lines.join('\n');
+                    } else {
+                        form.due_date = formatted;
+                    }
+                    dueDateBuffer.value = toInputDate(formatted);
+                };
+
+                const commitCompleteDate = () => {
+                    const val = completeDateBuffer.value;
+                    const formatted = fromInputDate(val);
+                    form.complete_date = formatted;
+                    completeDateBuffer.value = toInputDate(formatted);
+                };
+
+                // Client Dropdown Logic
+                const showClientMenu = ref(false);
+                const filteredClients = computed(() => {
+                    const input = (form.client || '').toLowerCase();
+                    if (!input) return uniqueClients.value;
+                    return uniqueClients.value.filter(c => c.toLowerCase().includes(input));
+                });
+                const selectClient = (val) => {
+                    form.client = val;
+                    showClientMenu.value = false;
+                };
+
+                // ---- Project Settings Logic ----
+                // Group projects by BU for display
+                const groupedProjects = computed(() => {
+                    const groups = {};
+                    // Initialize groups from buConf to ensure order
+                    buConf.value.forEach(b => groups[b.BU] = []);
+                    groups['Others'] = []; // Fallback for no BU
+
+                    projectConf.value.forEach(p => {
+                        const b = p.BU || 'Others';
+                        if (!groups[b]) groups[b] = [];
+                        groups[b].push(p);
+                    });
+
+                    // Sort projects within each group by Order
+                    Object.keys(groups).forEach(k => {
+                        groups[k].sort((a, b) => (a.Order || 50) - (b.Order || 50));
+                    });
+
+                    // If 'Others' has projects, ensure it's at the end of the keys list if needed,
+                    // but computed returns an object, so template logic handles it.
+                    return groups;
+                });
+
+                // Helper for Settings Modal (uses tempConfig)
+                // Dynamic Column Widths
+                const dynamicColWidths = computed(() => {
+                    const scaleMap = { small: 1, medium: 1.15, large: 1.3 };
+                    const s = scaleMap[fontScale.value] || 1;
+
+                    // Base widths (px) for Small font
+                    const base = {
+                        index: 60,      // #
+                        status: 100,    // Status
+                        client: 75,     // Client (Compact)
+                        project_code: 75, // Project (Compact)
+                        task: 240,      // Task Name
+                        start: 85,      // Start Date (Tightened)
+                        due: 85,        // Due Date (Tightened)
+                        remaining: 65,  // Remaining (Tightened)
+                        complete: 100,  // Complete Date (Tightened)
+                        action: 50      // Action (Compact)
+                    };
+
+                    return Object.fromEntries(
+                        Object.entries(base).map(([k, v]) => [k, `${Math.round(v * s)}px`])
+                    );
+                });
+
+                const tempGroupedProjects = computed(() => {
+                    const groups = {};
+                    (tempConfig.bu || []).forEach(b => groups[b.BU] = []);
+                    groups['Others'] = [];
+                    (tempConfig.project || []).forEach(p => {
+                        const b = p.BU || 'Others';
+                        if (!groups[b]) groups[b] = [];
+                        groups[b].push(p);
+                    });
+                    Object.keys(groups).forEach(k => {
+                        groups[k].sort((a, b) => (a.Order || 50) - (b.Order || 50));
+                    });
+                    return groups;
+                });
+
+                const getProjectStatusStyle = (statusCode) => {
+                    // Map Project Status Code to Status Name in statusConf
+                    let statusName = '';
+                    if (statusCode === 'O') statusName = '專案完成';
+                    else if (statusCode === 'X') statusName = '專案暫停';
+                    else if (statusCode === 'W') statusName = '?瑁?'; // Default active
+
+                    const status = statusConf.value.find(s => s.Status === statusName);
+                    if (status) {
+                        return {
+                            color: status.TextColor,
+                            backgroundColor: status.BgColor
+                        };
+                    }
+                    return {}; // Fallback
+                };
+
+                const getProjectRowClass = (statusCode) => {
+                    if (statusCode === 'O') return 'bg-green-50 border-green-100 hover:bg-green-100';
+                    if (statusCode === 'X') return 'bg-red-50 border-red-100 hover:bg-red-100';
+                    return 'bg-gray-50 border-gray-200 hover:bg-gray-100'; // Default for W or others
+                };
+
+                const onProjectStatusChange = (p) => {
+                    if (p.Status === 'O') p.Order = 98;
+                    else if (p.Status === 'X') p.Order = 99;
+                    // If moving back to W, maybe reset to 50? Or leave as is. User didn't specify.
+                    // Let's leave it as is to avoid jumping around unexpectedly.
+                };
+
+                let draggedProject = null;
+                const handleProjectDragStart = (p) => { draggedProject = p; };
+                const handleProjectDrop = (targetP, buName) => {
+                    if (!draggedProject || draggedProject === targetP) return;
+                    // Only allow sorting within same BU
+                    if (draggedProject.BU !== targetP.BU) return;
+
+                    // 1. Get all projects for this BU from tempConfig (Reactive state)
+                    const groupProjects = tempConfig.project.filter(p => (p.BU || 'Others') === buName);
+
+                    // 2. Sort them by current UI order (Order field) to establish baseline
+                    groupProjects.sort((a, b) => (a.Order || 50) - (b.Order || 50));
+
+                    // 3. Find indices using stable _uid (Critical for temp items)
+                    const fromIdx = groupProjects.findIndex(p => p._uid === draggedProject._uid);
+                    const toIdx = groupProjects.findIndex(p => p._uid === targetP._uid);
+
+                    if (fromIdx === -1 || toIdx === -1) return;
+
+                    // 4. Move item in the temporary array logic
+                    // Note: We can't splice tempConfig.project directly easily because it's flat.
+                    // Instead, we manipulate the order of the subset, then apply Order values back.
+
+                    const item = groupProjects.splice(fromIdx, 1)[0];
+                    groupProjects.splice(toIdx, 0, item);
+
+                    // 5. Re-assign Order to ALL items in this group
+                    // This updates the actual objects inside tempConfig.project by reference
+                    groupProjects.forEach((p, i) => {
+                        // Only update order for active projects or user intent? 
+                        // User wants to sort everything. 
+                        // Preserve high values for O/X if distinct?
+                        // Logic: If Status is Done/Paused (98/99), maybe don't touch?
+                        // User said: "I write 1 for all because I want to sort in settings settings"
+                        // Implication: Order determines strict sequence.
+                        // Safe bet: Re-index everything 1..N based on visual position.
+                        p.Order = i + 1;
+                    });
+
+                    draggedProject = null;
+                };
+
+                // ---- Modal UX Refinement ----
+                let mousedownWasBackdrop = false;
+                const handleBackdropMousedown = (e) => {
+                    mousedownWasBackdrop = (e.target === e.currentTarget);
+                };
+                const handleBackdropMouseup = (e, closeFn) => {
+                    if (mousedownWasBackdrop && e.target === e.currentTarget) {
+                        closeFn();
+                    }
+                    mousedownWasBackdrop = false;
+                };
+
+                const closeModal = () => showModal.value = false;
+
+                const confirmSave = () => {
+                    if (!form.task_name.trim()) { alert("請輸入作業名稱"); return; }
+
+                    saveState(); // Record history tracking
+
+                    // Dates are now plain text (no HTML), stored as-is in CSV
+                    ['start_date', 'due_date', 'complete_date'].forEach(k => {
+                        if (form[k]) form[k] = form[k].trim();
+                    });
+
+                    // Look up BU from project config
+                    if (form.project_code && projectConf.value) {
+                        const proj = projectConf.value.find(p => p.Code === form.project_code);
+                        if (proj) form.bu = proj.BU || 'Others';
+                    }
+
+                    if (editingItem.value) {
+                        const idx = rawData.value.indexOf(editingItem.value);
+                        if (idx !== -1) Object.assign(rawData.value[idx], { ...form });
+                    } else {
+                        rawData.value.splice(1, 0, { ...form });
+                    }
+
+                    // saveData(); // Batch Save: Don't save immediately
+                    hasUnsavedChanges.value = true;
+                    showToast('已暫存 (未同步到雲端)');
+                    closeModal();
+                };
+
+                const deleteItem = () => {
+                    if (!editingItem.value) return;
+                    if (!confirm('確定要刪除此項目嗎？')) return;
+
+                    saveState(); // Record history tracking
+
+                    let idx = rawData.value.indexOf(editingItem.value);
+
+                    // Fallback: If reference lost, try matching by content (Task Name + ProjectCode + Client)
+                    if (idx === -1) {
+                        console.warn("Delete by reference failed, trying content match...");
+                        idx = rawData.value.findIndex(item =>
+                            item.task_name === editingItem.value.task_name &&
+                            item.project_code === editingItem.value.project_code &&
+                            item.client === editingItem.value.client
+                        );
+                    }
+
+                    if (idx !== -1) {
+                        rawData.value.splice(idx, 1);
+                        hasUnsavedChanges.value = true;
+                        showToast('已刪除 (未同步到雲端)');
+                        closeModal();
+                    } else {
+                        alert("刪除失敗：找不到原始項目 (可能是資料已變更)");
+                    }
+                };
+
+                const saveData = async () => {
+                    if (isLocalFile.value) return;
+                    isSaving.value = true;
+                    try {
+                        if (currentGasConfig.value && currentGasConfig.value.url) {
+                            // GAS mode: POST JSON to GAS
+                            const targetUrl = currentGasConfig.value.url;
+                            const password = currentGasConfig.value.password || '';
+                            const res = await fetch(targetUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: JSON.stringify({ action: 'saveData', data: rawData.value, password: password }),
+                            });
+                            const json = await res.json();
+                            if (!json.success) throw new Error(json.error || 'GAS 儲存錯誤');
+                            showToast(`已儲存到 Google Sheet (${json.count} 筆)`);
+                        } else {
+                            // Local mode: POST to python server
+                            const res = await fetch('/api/save', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(rawData.value),
+                            });
+                            if (!res.ok) throw new Error(`Save failed (${res.status})`);
+                            showToast('儲存成功');
+                            hasUnsavedChanges.value = false; // Reset flag on success
+                        }
+                    } catch (e) {
+                        alert('儲存錯誤: ' + e.message);
+                    } finally {
+                        isSaving.value = false;
+                    }
+                };
+
+                const setTodayComplete = () => {
+                    const now = new Date();
+                    form.complete_date = `${String(now.getFullYear()).slice(2)}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+                    completeDateBuffer.value = toInputDate(form.complete_date); // Sync buffer
+                };
+
+                const stats = computed(() => {
+                    const items = rawData.value.filter(i => i.status !== '標題行');
+                    const total = items.length;
+                    const compl = items.filter(i => isCompleted(getEffectiveStatus(i))).length;
+                    return { total, completed: compl };
+                });
+                // Lifecycle
+                onMounted(() => {
+                    loadData();
+                    // Initialize history tracking after tracking data loaded
+                    setTimeout(() => saveState(), 1000);
+
+                    // Global keyboard handler
+                    window.addEventListener('keydown', (e) => {
+                        // 1. Close Modal on Escape
+                        if (e.key === 'Escape' && showModal.value) {
+                            closeModal();
+                        }
+                        // 2. Delete Item on Delete Key (Only if modal open & not editing text)
+                        if (e.key === 'Delete' && showModal.value) {
+                            const tag = document.activeElement ? document.activeElement.tagName : '';
+                            const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+                            if (!isInput) {
+                                deleteItem();
+                            }
+                        }
+                    });
+
+                    // Global Click for closing Dropdowns
+                    window.addEventListener('click', (e) => {
+                        // Close Client Dropdown if clicking outside
+                        const container = document.getElementById('client-dropdown-container');
+                        if (showClientMenu.value && container && !container.contains(e.target)) {
+                            showClientMenu.value = false;
+                        }
+                    });
+
+                    // Warn on close if unsaved
+                    window.onbeforeunload = (e) => {
+                        if (hasUnsavedChanges.value) {
+                            e.preventDefault();
+                            e.returnValue = '';
+                        }
+                    };
+                });
+
+                return {
+                    // State
+                    gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs,
+                    gasForm, isEditingGas, submitGasConfig, cancelEditGas, editGasConfig,
+                    exportGasConfigs, importGasConfigs,
+                    rawData, buConf, statusConf, projectConf,
+                    isLocalFile, loadingError, isSaving, hasUnsavedChanges,
+                    toast, showModal, isLoading, editingItem, form, uniqueClients,
+                    showClientMenu, filteredClients, selectClient,
+                    fontScale, fontSizes,
+
+                    // Computed
+                    buSections, stats, groupBy,
+                    recurrenceType, recurrenceDay, recurrenceLabel,
+                    dueDateHistory, dueDateCurrent, startDateInput,
+                    startDateBuffer, dueDateBuffer, completeDateBuffer, // Date Buffers
+                    startDateBuffer, dueDateBuffer, completeDateBuffer, // Date Buffers
+
+                    // Actions
+                    openAddModal, editItem, closeModal, confirmSave, deleteItem, saveData,
+                    setTodayComplete, formatDateHtml, formatDueDateWithHistory, addDueDateRevision,
+                    commitStartDate, commitDueDate, commitCompleteDate, // Date Commit Actions
+                    getStatusStyle, getEffectiveStatus, getCountdown, getCountdownColor,
+                    toggleBU, isBUCollapsed, toggleGroup, isGroupCollapsed,
+
+                    // Filters
+                    filterFields, filterExclusions, availableOptions, isOptionValid,
+                    toggleDropdown, toggleFilter, clearFilter, hideAllFilter, clearAllFilters,
+                    hasActiveFilters, activeDropdown, filterGroups, dropdownStyle,
+
+                    // Settings
+                    showSettingsModal, openSettings, closeSettings, settingsTab, tempConfig,
+                    addConfigRow, removeConfigRow, saveSettings, isSavingConfig,
+                    handleDragStart, handleDrop,
+
+                    // Project Refinement
+                    groupedProjects, tempGroupedProjects, dynamicColWidths, onProjectStatusChange, handleProjectDragStart, handleProjectDrop, getProjectStatusStyle, getProjectRowClass,
+
+                    // Modal Refinement
+                    handleBackdropMousedown, handleBackdropMouseup
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
