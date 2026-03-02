@@ -1935,19 +1935,19 @@
                         return parseCSV(text);
                     };
 
-
-
-                    const [d, p, s, b] = await Promise.all([
+                    const [d, p, s, b, c] = await Promise.all([
                         fetchCSV('data.csv?t=' + Date.now()),
                         fetch('/api/config?type=project').then(r => r.json()).catch(async () => await fetchCSV('project.csv?t=' + Date.now())),
                         fetch('/api/config?type=status').then(r => r.json()).catch(async () => await fetchCSV('status.csv?t=' + Date.now())),
-                        fetch('/api/config?type=bu').then(r => r.json()).catch(async () => await fetchCSV('bu.csv?t=' + Date.now()).catch(() => []))
+                        fetch('/api/config?type=bu').then(r => r.json()).catch(async () => await fetchCSV('bu.csv?t=' + Date.now()).catch(() => [])),
+                        fetch('/api/config?type=client').then(r => r.json()).catch(async () => await fetchCSV('client.csv?t=' + Date.now()).catch(() => []))
                     ]);
 
                     rawData.value = d;
                     projectConf.value = normalizeConfig('project', p);
                     statusConf.value = normalizeConfig('status', s);
                     buConf.value = normalizeConfig('bu', b);
+                    clientConf.value = normalizeConfig('client', c);
                 }
 
                 const loadViaGAS = async () => {
