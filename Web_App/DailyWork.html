@@ -2822,7 +2822,7 @@
                         ];
 
                         // If GAS is used, also try to sync to GAS
-                        if (GAS_URL) {
+                        if (currentGasConfig.value && currentGasConfig.value.url) {
                             promises.push(saveConfigToGAS('saveStatus', tempConfig.status));
                             promises.push(saveConfigToGAS('saveProject', tempConfig.project));
                             promises.push(saveConfigToGAS('saveBu', tempConfig.bu));
@@ -2865,7 +2865,7 @@
                 };
 
                 const saveConfigToGAS = async (action, data) => {
-                    if (!GAS_URL) return; // Skip if no GAS URL
+                    if (!currentGasConfig.value || !currentGasConfig.value.url) return;
 
                     // Prepare payload (fix column mapping for Project sheet)
                     let payloadData = data;
@@ -2880,11 +2880,12 @@
 
                     const payload = {
                         action: action,
+                        password: currentGasConfig.value.password || '',
                         data: payloadData
                     };
 
                     try {
-                        const response = await fetch(GAS_URL, {
+                        const response = await fetch(currentGasConfig.value.url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'text/plain' }, // Avoid preflight by using text/plain
                             body: JSON.stringify(payload)
