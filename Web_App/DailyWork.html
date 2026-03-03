@@ -724,29 +724,26 @@
                                             <!-- Group Header -->
                                             <tr class="bg-indigo-100 cursor-pointer hover:bg-indigo-200 border-y border-indigo-200 transition-colors group shadow-sm"
                                                 @click="toggleGroup(group.id)">
-                                                <td class="sticky left-0 z-20 bg-inherit px-4 py-2 text-center border-r border-indigo-300"
+                                                <td class="sticky left-0 z-20 bg-inherit px-4 py-2 text-center"
                                                     :class="{'text-emerald-700': group.project_status === 'O', 'text-rose-600': group.project_status === 'X', 'text-indigo-600': group.project_status !== 'O' && group.project_status !== 'X'}">
                                                     <i class="ri-folder-3-fill transition-transform duration-200 text-lg drop-shadow-md opacity-90"
                                                         :class="{'rotate-90': !isGroupCollapsed(group.id)}"></i>
                                                 </td>
-                                                <td
-                                                    class="px-3 py-2 bg-inherit border-r border-indigo-200 text-center shadow-inner">
+                                                <td class="px-3 py-2 bg-inherit text-center">
                                                     <button @click.stop="openTimelineModal(group, true)"
                                                         title="檢視專案進度時間軸"
-                                                        class="text-indigo-400 hover:text-indigo-700 transition-colors opacity-50 group-hover:opacity-100 bg-white/50 hover:bg-white rounded-md px-1.5 py-0.5 shadow-sm border border-indigo-100">
-                                                        <i class="ri-git-merge-line text-sm align-middle mr-1"></i><span
-                                                            class="text-xs font-bold">進度</span>
+                                                        class="text-indigo-600 hover:text-indigo-900 transition-colors opacity-50 group-hover:opacity-100 bg-white/50 hover:bg-white rounded-md px-2 py-0.5 shadow-sm border border-indigo-100">
+                                                        <i class="ri-git-merge-line text-base align-middle"></i>
                                                     </button>
                                                 </td>
-                                                <td colspan="2"
-                                                    class="px-3 py-2 bg-inherit border-r border-indigo-200 shadow-inner">
+                                                <td colspan="2" class="px-3 py-2 bg-inherit">
                                                     <span
                                                         class="text-sm font-bold text-indigo-950 uppercase tracking-widest drop-shadow-sm truncate block"
                                                         :title="group.name">
                                                         {{ group.name || '未分類' }}
                                                     </span>
                                                 </td>
-                                                <td colspan="6" class="px-3 py-2 bg-inherit shadow-inner">
+                                                <td colspan="6" class="px-3 py-2 bg-inherit">
                                                     <div
                                                         class="flex justify-end gap-4 text-xs font-semibold text-indigo-800/70">
                                                         <span>總計: {{ group.items.length }}</span>
@@ -800,7 +797,7 @@
                                                         <span :title="item.task_name">{{ item.task_name }}</span>
                                                         <button v-if="item.remark" @click.stop="openTimelineModal(item)"
                                                             title="檢視計畫與進度時間軸"
-                                                            class="text-gray-300 hover:text-indigo-600 transition-colors mt-0.5 shrink-0 opacity-50 group-hover/task:opacity-100">
+                                                            class="text-gray-500 hover:text-indigo-600 transition-colors mt-0.5 shrink-0 opacity-50 group-hover/task:opacity-100">
                                                             <i class="ri-node-tree text-sm"></i>
                                                         </button>
                                                     </div>
