@@ -841,7 +841,7 @@
                                                 <td class="px-3 py-1 border-b border-gray-100 text-center relative">
                                                     <button @click.stop="editItem(item)"
                                                         class="text-gray-400 hover:text-indigo-600 transition-colors bg-transparent hover:bg-indigo-50 p-1.5 rounded-md">
-                                                        <i class="ri-edit-line text-lg"></i>
+                                                        <i class="ri-edit-line text-sm"></i>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -1609,12 +1609,26 @@
                                                 <i class="ri-edit-line"></i>
                                             </button>
 
-                                            <!-- Delete Button -->
-                                            <button type="button" @click.prevent.stop="deleteGasConfig(conf)"
-                                                title="刪除連線"
-                                                class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
+                                            <!-- Inline Confirm Delete -->
+                                            <div v-if="confirmDeleteId === conf.id"
+                                                class="flex gap-1 items-center bg-rose-50 rounded px-1">
+                                                <button type="button" @click.stop="executeDeleteGasConfig(conf)"
+                                                    class="text-xs text-rose-600 hover:text-white hover:bg-rose-500 px-2 py-1 rounded font-bold transition-colors">
+                                                    確認刪除
+                                                </button>
+                                                <button type="button" @click.stop="confirmDeleteId = null"
+                                                    class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded transition-colors border border-gray-200 bg-white">
+                                                    取消
+                                                </button>
+                                            </div>
+
+                                            <template v-else>
+                                                <button type="button" @click.stop="confirmDeleteId = conf.id"
+                                                    title="刪除連線"
+                                                    class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </template>
                                         </div>
                                     </div>
                                     <div class="text-xs text-gray-500 font-mono break-all truncate text-ellipsis">
@@ -1681,6 +1695,8 @@
                     url: '',
                     password: ''
                 });
+
+                const confirmDeleteId = ref(null);
 
                 const isEditingGas = computed(() => !!gasForm.id);
 
@@ -1841,14 +1857,17 @@
                     loadData();
                 };
 
-                const deleteGasConfig = (conf) => {
-                    if (window.confirm(`確定要刪除連線 "${conf.name}" 嗎?`)) {
-                        gasConfigs.value = gasConfigs.value.filter(c => c.id !== conf.id);
-                        saveGasConfigs();
-                        if (currentGasConfig.value && currentGasConfig.value.id === conf.id) {
-                            setActiveGasConfig(gasConfigs.value.length > 0 ? gasConfigs.value[0] : null);
-                        }
+                const executeDeleteGasConfig = (conf) => {
+                    gasConfigs.value = gasConfigs.value.filter(c => c.id !== conf.id);
+                    saveGasConfigs();
+                    if (currentGasConfig.value && currentGasConfig.value.id === conf.id) {
+                        setActiveGasConfig(gasConfigs.value.length > 0 ? gasConfigs.value[0] : null);
                     }
+                    confirmDeleteId.value = null;
+                };
+
+                const deleteGasConfig = (conf) => {
+                    confirmDeleteId.value = conf.id;
                 };
 
                 loadGasConfigs();
@@ -3691,7 +3710,7 @@
                 // Return all exports
                 return {
                     // State
-                    gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs, deleteGasConfig,
+                    gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs, executeDeleteGasConfig, confirmDeleteId,
                     gasForm, isEditingGas, submitGasConfig, cancelEditGas, editGasConfig,
                     exportGasConfigs, importGasConfigs,
                     rawData, buConf, statusConf, projectConf, clientConf,
