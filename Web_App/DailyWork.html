@@ -2210,7 +2210,7 @@
                 };
                 const isCompleted = (status) => {
                     if (!status || typeof status !== 'string') return false;
-                    return status.includes('完成') || status.toLowerCase().includes('done');
+                    return status.includes('完成') || status.includes('結束') || status.toLowerCase().includes('done');
                 };
 
                 // ---- State ----
@@ -2238,7 +2238,7 @@
                     bu: new Set(),
                     project_code: new Set(),
                     client: new Set(),
-                    status: new Set(['專案完成', '任務暫停', '專案暫停']), // Default hide these sizes
+                    status: new Set(['專案完成', '任務完成', '任務結束', '任務暫停', '專案暫停']), // Default hide these sizes
                     owner: new Set(),
                     complete_date: new Set()
                 });
@@ -2691,7 +2691,7 @@
 
                     // Special styling for Task Paused if not in CSV
                     if (status === '任務暫停') return { backgroundColor: '#FEE2E2', color: '#991B1B' }; // Red-100/800
-                    if (status === '任務完成' || status === '未完成') return { backgroundColor: '#D1FAE5', color: '#065F46' }; // Green-100/800
+                    if (status === '任務完成' || status === '任務結束' || status === '未完成') return { backgroundColor: '#D1FAE5', color: '#065F46' }; // Green-100/800
 
                     const conf = statusConf.value.find(c => c.Status === status);
                     if (!conf) return { backgroundColor: '#E5E7EB', color: '#000000' };
@@ -3462,7 +3462,7 @@
                             if (!['專案暫停', '任務暫停'].includes(form.status)) {
                                 form.status = '任務暫停';
                             }
-                        } else if (!['任務完成', '專案完成'].includes(form.status)) {
+                        } else if (!['任務完成', '任務結束', '專案完成'].includes(form.status)) {
                             // If it's a project level task
                             if (form.client && form.project_code && form.client === form.project_code) {
                                 form.status = '專案完成';
@@ -3558,7 +3558,7 @@
                     form.complete_date = `${String(now.getFullYear()).slice(2)}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
                     completeDateBuffer.value = toInputDate(form.complete_date); // Sync buffer
 
-                    if (!['任務完成', '專案完成'].includes(form.status)) {
+                    if (!['任務完成', '任務結束', '專案完成'].includes(form.status)) {
                         if (form.client && form.project_code && form.client === form.project_code) {
                             form.status = '專案完成';
                         } else {
