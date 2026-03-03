@@ -3640,9 +3640,11 @@
 
                             let dateStr = '';
                             if (isCompletedItem && item.complete_date) {
-                                dateStr = ` ${item.complete_date}`;
+                                const latest = getLastDate(item.complete_date);
+                                if (latest) dateStr = ` ${latest}`;
                             } else if (item.due_date) {
-                                dateStr = ` ${item.due_date}`;
+                                const latest = getLastDate(item.due_date);
+                                if (latest) dateStr = ` ${latest}`;
                             }
 
                             timeline.push({
