@@ -574,7 +574,7 @@
                                             </span>
                                         </th>
 
-                                        <th scope="col" :style="{ minWidth: '75px', maxWidth: '200px', width: 'auto' }"
+                                        <th scope="col" :style="{ minWidth: '60px', maxWidth: '160px', width: 'auto' }"
                                             class="sticky top-0 z-40 bg-gray-50 px-3 py-1 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 truncate">
                                             {{ groupBy === 'project_code' ? '客戶' : '專案' }}
                                             <span class="relative inline-block ml-1 align-middle">
@@ -785,7 +785,7 @@
 
                                                 <!-- Client/Project -->
                                                 <td class="px-3 py-1 border-b border-gray-100 whitespace-nowrap text-sm font-medium text-gray-600 truncate"
-                                                    :style="{ minWidth: '75px', maxWidth: '200px', width: 'auto' }">
+                                                    :style="{ minWidth: '60px', maxWidth: '160px', width: 'auto' }">
                                                     <div class="truncate"
                                                         :title="groupBy === 'project_code' ? item.client : item.project_code">
                                                         {{ groupBy === 'project_code' ? item.client : item.project_code
@@ -795,7 +795,7 @@
 
                                                 <!-- Task Name -->
                                                 <td
-                                                    class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-900 font-medium break-words max-w-[140px]">
+                                                    class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-900 font-medium break-words max-w-[180px]">
                                                     <div class="flex items-start justify-between gap-1 group/task">
                                                         <span :title="item.task_name">{{ item.task_name }}</span>
                                                         <button v-if="item.remark" @click.stop="openTimelineModal(item)"
@@ -3291,9 +3291,9 @@
                     const base = {
                         index: 60,      // #
                         status: 100,    // Status
-                        client: 75,     // Client (Compact)
-                        project_code: 75, // Project (Compact)
-                        task: 240,      // Task Name
+                        client: 60,     // Client (Compact)
+                        project_code: 60, // Project (Compact)
+                        task: 255,      // Task Name
                         start: 85,      // Start Date (Tightened)
                         due: 85,        // Due Date (Tightened)
                         remaining: 65,  // Remaining (Tightened)
