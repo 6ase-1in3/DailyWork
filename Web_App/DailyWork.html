@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>作業管理表 (v2.2 GAS)</title>
+    <title>作業管理表</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Vue 3 -->
@@ -1312,7 +1312,7 @@
                                             <div class="px-4 py-2 bg-gray-50 border-t border-gray-200">
                                                 <button @click="addConfigRow('project', b.BU)"
                                                     class="text-indigo-600 font-semibold text-xs flex items-center gap-1 hover:underline px-2 py-1 rounded transition-colors">
-                                                    <i class="ri-add-line"></i> Add Project to {{ b.BU }}
+                                                    <i class="ri-add-line"></i> 新增專案
                                                 </button>
                                             </div>
                                         </div>
@@ -1350,7 +1350,7 @@
                                     <div class="pt-4 flex justify-center">
                                         <button @click="addConfigRow('project')"
                                             class="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-gray-300 text-sm font-medium transition-all shadow-sm flex items-center gap-2">
-                                            <i class="ri-add-circle-line text-lg"></i> Create New Project Code
+                                            <i class="ri-add-circle-line text-lg"></i> 新增專案
                                         </button>
                                     </div>
                                 </div>
@@ -1412,7 +1412,7 @@
                                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-center">
                                         <button @click="addConfigRow('bu')"
                                             class="px-4 py-1.5 bg-white border border-gray-200 text-indigo-600 rounded-lg hover:bg-indigo-50 text-sm font-bold transition-all shadow-sm flex items-center gap-2">
-                                            <i class="ri-add-line text-lg"></i> 新增事業單位
+                                            <i class="ri-add-line text-lg"></i> 新增事業
                                         </button>
                                     </div>
                                 </div>
@@ -1491,7 +1491,7 @@
                                             <div class="px-4 py-2 bg-gray-50 border-t border-gray-200">
                                                 <button @click="addConfigRow('client', b.BU)"
                                                     class="text-indigo-600 font-semibold text-xs flex items-center gap-1 hover:underline px-2 py-1 rounded transition-colors">
-                                                    <i class="ri-add-line"></i> 新增客戶到 {{ b.BU }}
+                                                    <i class="ri-add-line"></i> 新增客戶
                                                 </button>
                                             </div>
                                         </div>
@@ -1523,7 +1523,7 @@
                                     <div class="pt-4 flex justify-center">
                                         <button @click="addConfigRow('client')"
                                             class="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-gray-300 text-sm font-medium transition-all shadow-sm flex items-center gap-2">
-                                            <i class="ri-add-circle-line text-lg"></i> 建立新客戶
+                                            <i class="ri-add-circle-line text-lg"></i> 新增客戶
                                         </button>
                                     </div>
                                 </div>
@@ -1610,15 +1610,8 @@
                                             </button>
 
                                             <!-- Delete Button -->
-                                            <button @click="() => {
-                                                if(confirm('確定刪除?')) {
-                                                    gasConfigs.splice(idx, 1);
-                                                    saveGasConfigs();
-                                                    if(currentGasConfig && currentGasConfig.id === conf.id) {
-                                                        setActiveGasConfig(gasConfigs.length > 0 ? gasConfigs[0] : null);
-                                                    }
-                                                }
-                                            }" class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
+                                            <button @click="deleteGasConfig(idx, conf)"
+                                                class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
                                         </div>
@@ -1845,6 +1838,16 @@
                         localStorage.removeItem('active_gas_id');
                     }
                     loadData();
+                };
+
+                const deleteGasConfig = (idx, conf) => {
+                    if (confirm('確定刪除?')) {
+                        gasConfigs.value.splice(idx, 1);
+                        saveGasConfigs();
+                        if (currentGasConfig.value && currentGasConfig.value.id === conf.id) {
+                            setActiveGasConfig(gasConfigs.value.length > 0 ? gasConfigs.value[0] : null);
+                        }
+                    }
                 };
 
                 loadGasConfigs();
@@ -3687,7 +3690,7 @@
                 // Return all exports
                 return {
                     // State
-                    gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs,
+                    gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs, deleteGasConfig,
                     gasForm, isEditingGas, submitGasConfig, cancelEditGas, editGasConfig,
                     exportGasConfigs, importGasConfigs,
                     rawData, buConf, statusConf, projectConf, clientConf,
