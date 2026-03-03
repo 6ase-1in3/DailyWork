@@ -703,14 +703,15 @@
                                     <!-- Loop BU Sections -->
                                     <template v-for="bu in buSections" :key="bu.name">
                                         <!-- BU Section Header -->
-                                        <tr class="bg-gray-200 border-y border-gray-300 cursor-pointer hover:bg-gray-300 transition-colors"
-                                            @click="toggleBU(bu.name)">
+                                        <tr class="bg-slate-700 border-y border-slate-800 cursor-pointer hover:bg-slate-600 transition-colors"
+                                            @click="toggleBU(bu.name)"
+                                            :class="{'opacity-92 hover:opacity-100': isBUCollapsed(bu.name)}">
                                             <td colspan="10"
-                                                class="px-3 py-1.5 sticky left-0 z-30 bg-inherit border-r border-gray-300">
+                                                class="px-3 py-2 sticky left-0 z-30 bg-inherit border-r border-slate-600 shadow-sm">
                                                 <div class="flex items-center gap-2">
                                                     <i :class="isBUCollapsed(bu.name) ? 'ri-arrow-right-s-fill' : 'ri-arrow-down-s-fill'"
-                                                        class="text-gray-600"></i>
-                                                    <span class="font-bold text-gray-900" :class="bu.textClass"
+                                                        class="text-slate-300"></i>
+                                                    <span class="font-black text-white tracking-wider drop-shadow-md"
                                                         style="font-size: 1.15em;">{{ bu.label }}</span>
                                                 </div>
                                             </td>
@@ -721,20 +722,30 @@
                                         <template v-for="(group, gIndex) in bu.groups" :key="group.id"
                                             v-if="!isBUCollapsed(bu.name)">
                                             <!-- Group Header -->
-                                            <tr class="bg-indigo-50/60 cursor-pointer hover:bg-indigo-100 border-y border-indigo-100 transition-colors group"
+                                            <tr class="bg-indigo-100 cursor-pointer hover:bg-indigo-200 border-y border-indigo-200 transition-colors group shadow-sm"
                                                 @click="toggleGroup(group.id)">
-                                                <td class="sticky left-0 z-20 bg-inherit px-4 py-1.5 text-center border-r border-indigo-200"
-                                                    :class="{'text-emerald-600': group.project_status === 'O', 'text-rose-500': group.project_status === 'X', 'text-indigo-400': group.project_status !== 'O' && group.project_status !== 'X'}">
-                                                    <i class="ri-folder-fill transition-transform duration-200"
+                                                <td class="sticky left-0 z-20 bg-inherit px-4 py-2 text-center border-r border-indigo-300"
+                                                    :class="{'text-emerald-700': group.project_status === 'O', 'text-rose-600': group.project_status === 'X', 'text-indigo-600': group.project_status !== 'O' && group.project_status !== 'X'}">
+                                                    <i class="ri-folder-3-fill transition-transform duration-200 text-lg drop-shadow-md opacity-90"
                                                         :class="{'rotate-90': !isGroupCollapsed(group.id)}"></i>
                                                 </td>
-                                                <td colspan="9" class="px-3 py-1.5 bg-inherit">
+                                                <td colspan="9"
+                                                    class="px-3 py-2 bg-inherit border-r border-indigo-200 shadow-inner">
                                                     <div class="flex justify-between items-center">
                                                         <div class="flex items-center gap-3">
-                                                            <span class="text-sm font-bold text-indigo-950">{{
+                                                            <span
+                                                                class="text-sm font-bold text-indigo-950 uppercase tracking-widest drop-shadow-sm">{{
                                                                 group.name
                                                                 || '未分類'
                                                                 }}</span>
+
+                                                            <button @click.stop="openTimelineModal(group, true)"
+                                                                title="檢視專案進度時間軸"
+                                                                class="text-indigo-400 hover:text-indigo-700 transition-colors opacity-50 group-hover:opacity-100 bg-white/50 hover:bg-white rounded-md px-1.5 py-0.5 ml-2 shadow-sm border border-indigo-100">
+                                                                <i
+                                                                    class="ri-git-merge-line text-sm align-middle mr-1"></i><span
+                                                                    class="text-xs font-bold">進度</span>
+                                                            </button>
                                                         </div>
                                                         <div
                                                             class="flex gap-4 text-xs font-semibold text-indigo-800/70">
@@ -784,9 +795,16 @@
                                                 </td>
 
                                                 <!-- Task Name -->
-                                                <td class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-900 font-medium break-words max-w-[140px]"
-                                                    :title="item.task_name">
-                                                    {{ item.task_name }}
+                                                <td
+                                                    class="px-3 py-0.5 border-b border-gray-100 text-sm text-gray-900 font-medium break-words max-w-[140px]">
+                                                    <div class="flex items-start justify-between gap-1 group/task">
+                                                        <span :title="item.task_name">{{ item.task_name }}</span>
+                                                        <button v-if="item.remark" @click.stop="openTimelineModal(item)"
+                                                            title="檢視計畫與進度時間軸"
+                                                            class="text-gray-300 hover:text-indigo-600 transition-colors mt-0.5 shrink-0 opacity-50 group-hover/task:opacity-100">
+                                                            <i class="ri-node-tree text-sm"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
 
                                                 <!-- Start Date -->
@@ -1048,6 +1066,62 @@
                 </div>
             </transition>
 
+            <!-- Timeline Modal -->
+            <transition name="fade">
+                <div v-if="showTimelineModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
+                    @click.self="closeTimelineModal">
+                    <div
+                        class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden max-h-[85vh]">
+                        <!-- Header -->
+                        <div
+                            class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+                            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 truncate">
+                                <i class="ri-route-line text-indigo-600"></i>
+                                {{ currentTimelineItem?.task_name || '進度時間軸' }}
+                            </h2>
+                            <button @click="closeTimelineModal"
+                                class="text-gray-400 hover:text-gray-600 hover:bg-gray-200 p-1.5 rounded-full transition-colors focus:outline-none">
+                                <i class="ri-close-line text-xl"></i>
+                            </button>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                            <div v-if="parsedTimeline.length === 0" class="text-center text-gray-500 py-8">
+                                <i class="ri-information-line text-2xl mb-2 text-gray-300"></i>
+                                <p>備註中沒有可用的進度資訊</p>
+                            </div>
+
+                            <div v-else class="flex flex-col">
+                                <div v-for="(item, idx) in parsedTimeline" :key="idx" class="flex items-start">
+                                    <div class="flex flex-col items-center mr-4 relative">
+                                        <!-- Dot -->
+                                        <div v-if="item.isCompleted"
+                                            class="w-4 h-4 rounded-full bg-indigo-500 z-10 flex-shrink-0 shadow-sm ring-4 ring-white">
+                                        </div>
+                                        <div v-else
+                                            class="w-4 h-4 rounded-full bg-white border-2 border-indigo-400 z-10 flex-shrink-0 shadow-sm ring-4 ring-white">
+                                        </div>
+
+                                        <!-- Line segment below dot -->
+                                        <div v-if="idx !== parsedTimeline.length - 1" class="w-0.5 min-h-[3rem] my-1"
+                                            :class="parsedTimeline[idx+1].isCompleted ? 'bg-indigo-500' : 'border-l-2 border-dashed border-indigo-200 bg-transparent'">
+                                        </div>
+                                    </div>
+                                    <div class="pb-6 pt-0 flex-1">
+                                        <div class="text-sm rounded-lg p-3 border -mt-1.5 transition-colors shadow-sm"
+                                            :class="item.isCompleted ? 'bg-indigo-50/50 border-indigo-100 text-gray-800 font-medium' : 'bg-gray-50 border-gray-100 text-gray-500'">
+                                            {{ item.content }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
             </main>
 
             <!-- Settings Side Panel (Overlay Drawer) -->
@@ -1073,8 +1147,8 @@
                             @click="settingsTab = tab"
                             class="py-4 text-sm font-medium border-b-2 transition-colors relative"
                             :class="settingsTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                            {{ tab === 'status' ? '狀態設定' : tab === 'project' ? '專案與指派' : tab === 'client' ? '客戶管理' : tab
-                            === 'bu' ? '事業單位' : '連線設定'
+                            {{ tab === 'status' ? '狀態' : tab === 'project' ? '專案' : tab === 'client' ? '客戶' : tab
+                            === 'bu' ? '事業' : '連線'
                             }}
                             <span v-if="settingsTab === tab"
                                 class="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
@@ -1166,7 +1240,7 @@
                                     <i class="ri-folder-open-line text-indigo-600"></i> Project Configuration
                                 </h4>
                                 <div class="space-y-6">
-                                    <div v-for="b in buConf" :key="b.BU">
+                                    <div v-for="b in tempConfig.bu" :key="b.BU">
                                         <div
                                             class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                                             <div
@@ -1249,7 +1323,7 @@
                                     </div>
 
                                     <!-- Unassigned Projects Warning -->
-                                    <div v-if="groupedProjects['Others']?.length > 0"
+                                    <div v-if="tempGroupedProjects['Others']?.length > 0"
                                         class="mt-6 bg-rose-50 rounded-xl border border-rose-100 overflow-hidden">
                                         <div
                                             class="px-4 py-3 border-b border-rose-100 bg-rose-50/50 flex items-center gap-2">
@@ -1261,11 +1335,13 @@
                                             <p class="text-xs text-rose-600 mb-3">These projects do not belong to any
                                                 defined BU. Please drag them to a BU or assign one.</p>
                                             <div class="flex flex-wrap gap-2">
-                                                <div v-for="p in groupedProjects['Others']" :key="p.Code"
-                                                    class="bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2">
+                                                <div v-for="p in tempGroupedProjects['Others']" :key="p.Code"
+                                                    draggable="true" @dragstart="handleProjectDragStart(p)"
+                                                    class="cursor-move bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 hover:bg-rose-50 transition-colors">
+                                                    <i class="ri-drag-move-2-line text-rose-400"></i>
                                                     {{ p.Code }}
                                                     <select v-model="p.Status"
-                                                        class="border-none bg-transparent p-0 text-xs font-normal focus:ring-0 text-rose-400">
+                                                        class="border-none bg-transparent p-0 text-xs font-normal focus:ring-0 text-rose-400 cursor-pointer">
                                                         <option value="W">W</option>
                                                         <option value="O">O</option>
                                                         <option value="X">X</option>
@@ -1291,52 +1367,33 @@
                                 <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
                                     <i class="ri-building-line text-indigo-600"></i> Business Units
                                 </h4>
-                                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                                    <table class="w-full text-sm">
-                                        <thead class="bg-gray-50/50 border-b border-gray-200">
-                                            <tr>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    BU Name</th>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">
-                                                    Order</th>
-                                                <th
-                                                    class="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider relative group border-b border-gray-200">
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100">
-                                            <tr v-for="(b, idx) in tempConfig.bu" :key="b._uid" draggable="true"
-                                                @dragstart="handleDragStart(idx)" @dragover.prevent
-                                                @drop="handleDrop(idx)"
-                                                class="cursor-move hover:bg-gray-50 transition-colors group">
-                                                <td class="px-4 py-3">
-                                                    <div class="flex items-center gap-3">
-                                                        <i
-                                                            class="ri-drag-move-2-line text-gray-300 group-hover:text-gray-500"></i>
-                                                        <input v-model="b.BU"
-                                                            class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <input type="number" v-model="b.Order"
-                                                        class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-center text-gray-500"
-                                                        readonly>
-                                                </td>
-                                                <td class="px-4 py-3 text-center">
-                                                    <button @click="removeConfigRow('bu', idx)"
-                                                        class="text-gray-400 hover:text-rose-500 transition-colors p-1.5 rounded-md hover:bg-rose-50">
-                                                        <i class="ri-delete-bin-line text-lg"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                <div class="bg-gray-50/50 rounded-xl border border-gray-200 shadow-sm p-4">
+                                    <div class="flex flex-wrap gap-3">
+                                        <div v-for="(b, idx) in tempConfig.bu" :key="b._uid" draggable="true"
+                                            @dragstart="handleDragStart(idx)" @dragover.prevent @drop="handleDrop(idx)"
+                                            class="cursor-move bg-white border border-gray-200 shadow-sm rounded-lg flex items-center gap-1.5 px-2 py-1.5 hover:border-indigo-300 hover:shadow-md transition-all group">
+
+                                            <div
+                                                class="flex items-center justify-center text-gray-300 group-hover:text-indigo-400">
+                                                <i class="ri-drag-move-2-line text-sm"></i>
+                                            </div>
+                                            <input v-model="b.BU"
+                                                class="w-24 bg-transparent border-none p-0 focus:ring-0 text-sm font-bold text-gray-700 placeholder-gray-300"
+                                                placeholder="BU Name">
+                                            <button @click="removeConfigRow('bu', idx)"
+                                                class="text-gray-300 hover:text-rose-500 transition-colors p-0.5 rounded opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                                                <i class="ri-close-circle-fill text-base"></i>
+                                            </button>
+                                        </div>
+                                        <div v-if="tempConfig.bu.length === 0"
+                                            class="w-full py-4 text-center text-gray-400 italic text-sm">
+                                            目前沒有事業單位，請新增。
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 flex justify-center border-t border-gray-200">
                                         <button @click="addConfigRow('bu')"
-                                            class="text-indigo-600 font-semibold text-sm flex items-center gap-1.5 hover:text-indigo-700 hover:underline px-2 py-1 rounded-md transition-colors">
-                                            <i class="ri-add-line"></i> Add New BU
+                                            class="px-4 py-1.5 bg-white border border-gray-200 text-indigo-600 rounded-lg hover:bg-indigo-50 text-sm font-bold transition-all shadow-sm flex items-center gap-2">
+                                            <i class="ri-add-line text-lg"></i> 新增事業單位
                                         </button>
                                     </div>
                                 </div>
@@ -1351,7 +1408,7 @@
                                     <i class="ri-user-line text-indigo-600"></i> 客戶管理
                                 </h4>
                                 <div class="space-y-6">
-                                    <div v-for="b in buConf" :key="b.BU">
+                                    <div v-for="b in tempConfig.bu" :key="b.BU">
                                         <div
                                             class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                                             <div
@@ -1435,7 +1492,9 @@
                                                 defined BU. Please drag them to a BU or assign one.</p>
                                             <div class="flex flex-wrap gap-2">
                                                 <div v-for="c in tempGroupedClients['Others']" :key="c._uid"
-                                                    class="bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2">
+                                                    draggable="true" @dragstart="handleClientDragStart(c)"
+                                                    class="cursor-move bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 hover:bg-rose-50 transition-colors">
+                                                    <i class="ri-drag-move-2-line text-rose-400"></i>
                                                     {{ c.Client }}
                                                 </div>
                                             </div>
@@ -1567,7 +1626,7 @@
                         <button @click="saveSettings"
                             class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 active:bg-indigo-800 text-sm font-semibold transition-all flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             <i class="ri-save-line" :class="{'animate-spin': isSavingConfig}"></i>
-                            {{ isSavingConfig ? '套用中...' : '套用設定' }}
+                            {{ isSavingConfig ? '儲存中...' : '儲存變更' }}
                         </button>
                     </div>
                 </div>
@@ -2137,6 +2196,9 @@
                 const collapsedGroups = reactive(new Set());
                 // const filterStatus = ref([]); // Replaced by Advanced Filtering
                 const groupBy = ref('project_code'); // Toggle: 'project_code' or 'client'
+                const getGroupTitle = (group) => {
+                    return group.name;
+                };
 
                 // ---- Advanced Filtering Engine (Exclusion Mode / Blacklist) ----
                 const filterFields = {
@@ -2154,7 +2216,7 @@
                     bu: new Set(),
                     project_code: new Set(),
                     client: new Set(),
-                    status: new Set(),
+                    status: new Set(['專案完成', '任務暫停', '專案暫停']), // Default hide these sizes
                     owner: new Set(),
                     complete_date: new Set()
                 });
@@ -2411,9 +2473,32 @@
                                 if (isCompleted(getEffectiveStatus(item))) subGroupMap[key].completedCount++;
                             });
 
-                            // Sort items in each group by Status Order
+                            // Sort items in each group by Task Name Prefix Number, Start Date, then Status Order
                             Object.values(subGroupMap).forEach(g => {
                                 g.items.sort((a, b) => {
+                                    // 1. Sort by number prefix (e.g., 1., 2., etc.)
+                                    const matchA = a.task_name ? a.task_name.trim().match(/^(\d+)\./) : null;
+                                    const matchB = b.task_name ? b.task_name.trim().match(/^(\d+)\./) : null;
+                                    const numA = matchA ? parseInt(matchA[1], 10) : Infinity;
+                                    const numB = matchB ? parseInt(matchB[1], 10) : Infinity;
+
+                                    if (numA !== numB) {
+                                        return numA - numB;
+                                    }
+
+                                    // 2. Fallback to start_date
+                                    const dateStrA = getLastDate(a.start_date);
+                                    const dateStrB = getLastDate(b.start_date);
+                                    const dateA = dateStrA ? parseDate(dateStrA) : null;
+                                    const dateB = dateStrB ? parseDate(dateStrB) : null;
+
+                                    const timeA = dateA ? dateA.getTime() : Infinity;
+                                    const timeB = dateB ? dateB.getTime() : Infinity;
+
+                                    if (timeA !== timeB) {
+                                        return timeA - timeB;
+                                    }
+
                                     const sa = getEffectiveStatus(a);
                                     const sb = getEffectiveStatus(b);
                                     const oa = sOrderMap[sa] !== undefined ? sOrderMap[sa] : 99;
@@ -2557,33 +2642,23 @@
                     });
                 });
 
-                // Auto-status logic: project status and complete_date override stored status
+                // Auto-status logic: project status overrides stored status
                 const getEffectiveStatus = (item) => {
                     if (!item) return '';
 
                     // 1. Check project-level status (O=Project Done, X=Project Paused) - HIGHEST PRIORITY
                     if (projectConf.value && item.project_code) {
-                        const proj = projectConf.value.find(p => p.Code === item.project_code);
+                        const sanitizedItemCode = item.project_code.replace(/\s+/g, '').toLowerCase();
+                        const proj = projectConf.value.find(p => (p.Code || '').replace(/\s+/g, '').toLowerCase() === sanitizedItemCode);
                         if (proj) {
                             // Support both new (O/X) and old (9/10) formats
-                            const status = String(proj.Status).toUpperCase();
-                            if (status === 'X' || status === '10') return '專案暫停';
-                            if (status === 'O' || status === '9') return '專案完成';
+                            const status = String(proj.Status).toUpperCase().trim();
+                            if (status.startsWith('X') || status === '10') return '專案暫停';
+                            if (status.startsWith('O') || status === '9') return '專案完成';
                         }
                     }
 
-                    // 2. Check for Task Paused (Complete Date = 'X' or 'x')
-                    if (item.complete_date && (item.complete_date.trim() === 'X' || item.complete_date.trim() === 'x')) {
-                        return '任務暫停';
-                    }
-
-                    // Check task-level completion
-                    if (item.complete_date && item.complete_date.trim()) {
-                        // If client === project_code, treat as project-level completion
-                        if (item.client && item.project_code && item.client === item.project_code) return '專案完成';
-                        return '任務完成';
-                    }
-                    // Fallback to stored status
+                    // Fallback to stored status (Data controls the display entirely for tasks)
                     return item.status || '';
                 };
 
@@ -2765,9 +2840,9 @@
                     if (!txt) return '';
                     if (txt === '暫停中') return 'text-gray-400 font-bold';
                     if (txt.includes('延遲')) return 'text-rose-600 font-bold'; // Red
-                    if (txt.includes('提早')) return 'text-emerald-600 font-bold'; // Green
+                    if (txt.includes('提早') || txt.includes('準時')) return 'text-emerald-600 font-bold'; // Green
                     if (txt.includes('倒數')) return 'text-blue-600 font-bold'; // Blue
-                    if (txt.includes('準時') || txt.includes('到期')) return 'text-amber-600 font-bold';
+                    if (txt.includes('到期')) return 'text-amber-600 font-bold';
                     return 'text-gray-500';
                 };
 
@@ -2854,7 +2929,7 @@
                     if (type === 'status') {
                         tempConfig.status.push({ Status: 'New Status', BgColor: '#E5E7EB', TextColor: '#000000', Order: 99, _uid: Math.random().toString(36) });
                     } else if (type === 'project') {
-                        tempConfig.project.push({ Code: 'NEW_PROJ', Status: 'W', BU: activeBU || 'New BU', _uid: Math.random().toString(36) });
+                        tempConfig.project.push({ Code: 'NEW_PROJ', Status: 'W', BU: activeBU || 'New BU', Order: 99, _uid: Math.random().toString(36) });
                     } else if (type === 'bu') {
                         tempConfig.bu.push({ BU: 'New BU', Order: 99, _uid: Math.random().toString(36) });
                     } else if (type === 'client') {
@@ -2899,8 +2974,7 @@
                         showToast('設定已儲存', 'success');
                         closeSettings();
 
-                        // Reload data to reflect changes (esp if project/status mapping changed)
-                        await loadData();
+                        // Removed auto-reload to prevent disruption. The user can manually reload if desired.
 
                     } catch (e) {
                         alert('儲存設定錯誤: ' + e.message);
@@ -3031,23 +3105,17 @@
 
                 // Due date edit revision
                 const editRevision = (idx) => {
-                    if (!confirm('確定要將此歷史紀錄移出並重新編輯嗎？')) return;
                     const lines = (form.due_date || '').split('\n');
                     if (idx >= 0 && idx < lines.length - 1) {
-                        // Extract the line
-                        const extracted = lines.splice(idx, 1)[0];
-                        // If the current editable line is empty, put it there, otherwise append it
-                        const current = lines[lines.length - 1]?.trim();
-                        if (!current) {
-                            lines[lines.length - 1] = extracted;
-                        } else {
-                            lines.push(extracted);
+                        const newDate = prompt('請修改歷史紀錄：', lines[idx]);
+                        if (newDate !== null && newDate.trim() !== '') {
+                            lines[idx] = newDate.trim();
+                            form.due_date = lines.join('\n');
+                            // re-sync buffer
+                            nextTick(() => {
+                                dueDateBuffer.value = toInputDate(form.due_date);
+                            });
                         }
-                        form.due_date = lines.join('\n');
-                        // re-sync buffer
-                        nextTick(() => {
-                            dueDateBuffer.value = toInputDate(form.due_date);
-                        });
                     }
                 };
 
@@ -3079,6 +3147,21 @@
                         }
                     });
                     return Array.from(clients).sort();
+                });
+
+                const uniqueProjects = computed(() => {
+                    const projects = new Set();
+                    if (projectConf.value) {
+                        projectConf.value.forEach(p => {
+                            if (p.Code && p.Code.trim()) projects.add(p.Code.trim());
+                        });
+                    }
+                    rawData.value.forEach(row => {
+                        if (row.project_code && row.project_code.trim()) {
+                            projects.add(row.project_code.trim());
+                        }
+                    });
+                    return Array.from(projects).sort();
                 });
 
 
@@ -3144,7 +3227,7 @@
                     groups['Others'] = []; // Fallback for no BU
 
                     projectConf.value.forEach(p => {
-                        const b = p.BU || 'Others';
+                        const b = p.BU || p.Bu || 'Others';
                         if (!groups[b]) groups[b] = [];
                         groups[b].push(p);
                     });
@@ -3164,7 +3247,7 @@
                     buConf.value.forEach(b => groups[b.BU] = []);
                     groups['Others'] = []; // Fallback for no BU
                     clientConf.value.forEach(c => {
-                        const b = c.BU || 'Others';
+                        const b = c.BU || c.Bu || 'Others';
                         if (!groups[b]) groups[b] = [];
                         groups[b].push(c);
                     });
@@ -3204,7 +3287,7 @@
                     (tempConfig.bu || []).forEach(b => groups[b.BU] = []);
                     groups['Others'] = [];
                     (tempConfig.project || []).forEach(p => {
-                        const b = p.BU || 'Others';
+                        const b = p.BU || p.Bu || 'Others';
                         if (!groups[b]) groups[b] = [];
                         groups[b].push(p);
                     });
@@ -3219,7 +3302,7 @@
                     (tempConfig.bu || []).forEach(b => groups[b.BU] = []);
                     groups['Others'] = [];
                     (tempConfig.client || []).forEach(c => {
-                        const b = c.BU || 'Others';
+                        const b = c.BU || c.Bu || 'Others';
                         if (!groups[b]) groups[b] = [];
                         groups[b].push(c);
                     });
@@ -3348,6 +3431,23 @@
                         if (form[k]) form[k] = form[k].trim();
                     });
 
+                    // Ensure status consistency before saving metadata
+                    if (form.complete_date) {
+                        const lowComplete = form.complete_date.toLowerCase();
+                        if (lowComplete === 'x') {
+                            if (!['專案暫停', '任務暫停'].includes(form.status)) {
+                                form.status = '任務暫停';
+                            }
+                        } else if (!['任務完成', '專案完成'].includes(form.status)) {
+                            // If it's a project level task
+                            if (form.client && form.project_code && form.client === form.project_code) {
+                                form.status = '專案完成';
+                            } else {
+                                form.status = '任務完成';
+                            }
+                        }
+                    }
+
                     // Look up BU from project config
                     if (form.project_code && projectConf.value) {
                         const proj = projectConf.value.find(p => p.Code === form.project_code);
@@ -3433,6 +3533,14 @@
                     const now = new Date();
                     form.complete_date = `${String(now.getFullYear()).slice(2)}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
                     completeDateBuffer.value = toInputDate(form.complete_date); // Sync buffer
+
+                    if (!['任務完成', '專案完成'].includes(form.status)) {
+                        if (form.client && form.project_code && form.client === form.project_code) {
+                            form.status = '專案完成';
+                        } else {
+                            form.status = '任務完成';
+                        }
+                    }
                 };
 
                 const stats = computed(() => {
@@ -3441,6 +3549,80 @@
                     const compl = items.filter(i => isCompleted(getEffectiveStatus(i))).length;
                     return { total, completed: compl };
                 });
+
+                // ---- Timeline Logic ----
+                const showTimelineModal = ref(false);
+                const currentTimelineItem = ref(null);
+                const isTimelineProjectLevel = ref(false);
+
+                const openTimelineModal = (item, isProject = false) => {
+                    currentTimelineItem.value = item;
+                    isTimelineProjectLevel.value = isProject;
+                    showTimelineModal.value = true;
+                };
+
+                const closeTimelineModal = () => {
+                    showTimelineModal.value = false;
+                    currentTimelineItem.value = null;
+                    isTimelineProjectLevel.value = false;
+                };
+
+                const parsedTimeline = computed(() => {
+                    if (!currentTimelineItem.value) return [];
+                    const timeline = [];
+
+                    if (isTimelineProjectLevel.value) {
+                        // We are given a Group object. Read through its items
+                        // group.items -> Array of rows
+                        const items = currentTimelineItem.value.items || [];
+
+                        // Extract only tasks that have a number prefix (e.g., 1., 2.)
+                        const flowItems = items.filter(item => {
+                            if (!item.task_name) return false;
+                            return /^(\d+)\./.test(item.task_name.trim());
+                        });
+
+                        // Sort the filtered items by their number
+                        flowItems.sort((a, b) => {
+                            const numA = parseInt(a.task_name.trim().match(/^(\d+)\./)[1], 10);
+                            const numB = parseInt(b.task_name.trim().match(/^(\d+)\./)[1], 10);
+                            return numA - numB;
+                        });
+
+                        for (const item of flowItems) {
+                            const effStatus = getEffectiveStatus(item);
+                            const isCompletedItem = isCompleted(effStatus);
+                            const isPausedOrCancel = effStatus.includes('暫停') || effStatus === 'X' || effStatus.toLowerCase() === 'cancel';
+
+                            timeline.push({
+                                content: item.task_name || '無標題任務',
+                                isCompleted: isCompletedItem,
+                                isPaused: isPausedOrCancel,
+                                status: effStatus
+                            });
+                        }
+                    } else {
+                        // Regular line item parsing from remarks
+                        if (!currentTimelineItem.value.remark) return [];
+                        const lines = currentTimelineItem.value.remark.split('\n').map(l => l.trim()).filter(l => l);
+                        for (const line of lines) {
+                            // Skip lines that start with ! (e.g. !123456789! or ! note)
+                            if (/^!.*$/.test(line)) {
+                                continue;
+                            }
+
+                            const isFuture = line.startsWith('>');
+                            const content = isFuture ? line.substring(1).trim() : line;
+
+                            timeline.push({
+                                content,
+                                isCompleted: !isFuture
+                            });
+                        }
+                    }
+                    return timeline;
+                });
+
                 // Lifecycle
                 onMounted(() => {
                     loadData();
@@ -3481,6 +3663,7 @@
                     };
                 });
 
+                // Return all exports
                 return {
                     // State
                     gasConfigs, currentGasConfig, setActiveGasConfig, saveGasConfigs,
@@ -3488,22 +3671,21 @@
                     exportGasConfigs, importGasConfigs,
                     rawData, buConf, statusConf, projectConf, clientConf,
                     isLocalFile, loadingError, isSaving, hasUnsavedChanges,
-                    toast, showModal, isLoading, editingItem, form, uniqueClients,
+                    toast, showModal, isLoading, editingItem, form, uniqueClients, uniqueProjects,
                     showClientMenu, filteredClients, selectClient,
                     fontScale, fontSizes,
 
                     // Computed
-                    buSections, stats, groupBy,
+                    buSections, stats, groupBy, getGroupTitle,
                     recurrenceType, recurrenceDay, recurrenceLabel,
                     dueDateHistory, dueDateCurrent, startDateInput,
-                    startDateBuffer, dueDateBuffer, completeDateBuffer, // Date Buffers
-                    startDateBuffer, dueDateBuffer, completeDateBuffer, // Date Buffers
+                    startDateBuffer, dueDateBuffer, completeDateBuffer,
 
                     // Actions
                     openAddModal, editItem, closeModal, confirmSave, deleteItem, saveData,
                     setTodayComplete, formatDateHtml, formatDueDateWithHistory, addDueDateRevision,
-                    editRevision,
-                    commitStartDate, commitDueDate, commitCompleteDate, // Date Commit Actions
+                    editRevision, syncBuffers,
+                    commitStartDate, commitDueDate, commitCompleteDate,
                     getStatusStyle, getEffectiveStatus, getCountdown, getCountdownColor,
                     toggleBU, isBUCollapsed, toggleGroup, isGroupCollapsed,
 
@@ -3519,7 +3701,9 @@
 
                     // Project Refinement
                     groupedProjects, groupedClients, tempGroupedClients, tempGroupedProjects, dynamicColWidths, onProjectStatusChange, handleProjectDragStart, handleProjectDrop, handleClientDragStart, handleClientDrop, getProjectStatusStyle, getProjectRowClass,
-                    showSummaryModal, openSummaryModal, closeSummaryModal, isGeneratingSummary, hasSummaryResult, summaryText, downloadSummaryHtml, generateSummary, parseMarkdownLinks
+
+                    // Timeline
+                    showTimelineModal, currentTimelineItem, openTimelineModal, closeTimelineModal, parsedTimeline
                 };
             }
         }).mount('#app');
