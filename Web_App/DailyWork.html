@@ -2473,10 +2473,20 @@
                                 if (isCompleted(getEffectiveStatus(item))) subGroupMap[key].completedCount++;
                             });
 
-                            // Sort items in each group by Task Name Prefix Number, Start Date, then Status Order
+                            // Sort items in each group by Status Order, then Task Name Prefix Number, then Start Date
                             Object.values(subGroupMap).forEach(g => {
                                 g.items.sort((a, b) => {
-                                    // 1. Sort by number prefix (e.g., 1., 2., etc.)
+                                    // 1. Sort by Status Order
+                                    const sa = getEffectiveStatus(a);
+                                    const sb = getEffectiveStatus(b);
+                                    const oa = sOrderMap[sa] !== undefined ? sOrderMap[sa] : 99;
+                                    const ob = sOrderMap[sb] !== undefined ? sOrderMap[sb] : 99;
+
+                                    if (oa !== ob) {
+                                        return oa - ob;
+                                    }
+
+                                    // 2. Sort by number prefix (e.g., 1., 2., etc.)
                                     const matchA = a.task_name ? a.task_name.trim().match(/^(\d+)\./) : null;
                                     const matchB = b.task_name ? b.task_name.trim().match(/^(\d+)\./) : null;
                                     const numA = matchA ? parseInt(matchA[1], 10) : Infinity;
@@ -2486,7 +2496,7 @@
                                         return numA - numB;
                                     }
 
-                                    // 2. Fallback to start_date
+                                    // 3. Fallback to start_date
                                     const dateStrA = getLastDate(a.start_date);
                                     const dateStrB = getLastDate(b.start_date);
                                     const dateA = dateStrA ? parseDate(dateStrA) : null;
@@ -2495,15 +2505,7 @@
                                     const timeA = dateA ? dateA.getTime() : Infinity;
                                     const timeB = dateB ? dateB.getTime() : Infinity;
 
-                                    if (timeA !== timeB) {
-                                        return timeA - timeB;
-                                    }
-
-                                    const sa = getEffectiveStatus(a);
-                                    const sb = getEffectiveStatus(b);
-                                    const oa = sOrderMap[sa] !== undefined ? sOrderMap[sa] : 99;
-                                    const ob = sOrderMap[sb] !== undefined ? sOrderMap[sb] : 99;
-                                    return oa - ob;
+                                    return timeA - timeB;
                                 });
                             });
 
