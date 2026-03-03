@@ -3638,8 +3638,15 @@
                             const isCompletedItem = isCompleted(effStatus);
                             const isPausedOrCancel = effStatus.includes('暫停') || effStatus === 'X' || effStatus.toLowerCase() === 'cancel';
 
+                            let dateStr = '';
+                            if (isCompletedItem && item.complete_date) {
+                                dateStr = ` (完成: ${item.complete_date})`;
+                            } else if (item.due_date) {
+                                dateStr = ` (預定: ${item.due_date})`;
+                            }
+
                             timeline.push({
-                                content: item.task_name || '無標題任務',
+                                content: (item.task_name || '無標題任務') + dateStr,
                                 isCompleted: isCompletedItem,
                                 isPaused: isPausedOrCancel,
                                 status: effStatus
