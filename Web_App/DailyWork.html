@@ -1610,7 +1610,8 @@
                                             </button>
 
                                             <!-- Delete Button -->
-                                            <button @click="deleteGasConfig(idx, conf)"
+                                            <button type="button" @click.prevent.stop="deleteGasConfig(conf)"
+                                                title="刪除連線"
                                                 class="text-gray-400 hover:text-rose-500 p-1 transition-colors">
                                                 <i class="ri-delete-bin-line"></i>
                                             </button>
@@ -1840,9 +1841,9 @@
                     loadData();
                 };
 
-                const deleteGasConfig = (idx, conf) => {
-                    if (confirm('確定刪除?')) {
-                        gasConfigs.value.splice(idx, 1);
+                const deleteGasConfig = (conf) => {
+                    if (window.confirm(`確定要刪除連線 "${conf.name}" 嗎?`)) {
+                        gasConfigs.value = gasConfigs.value.filter(c => c.id !== conf.id);
                         saveGasConfigs();
                         if (currentGasConfig.value && currentGasConfig.value.id === conf.id) {
                             setActiveGasConfig(gasConfigs.value.length > 0 ? gasConfigs.value[0] : null);
