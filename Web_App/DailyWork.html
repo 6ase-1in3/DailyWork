@@ -3640,9 +3640,9 @@
 
                             let dateStr = '';
                             if (isCompletedItem && item.complete_date) {
-                                dateStr = ` (完成: ${item.complete_date})`;
+                                dateStr = ` ${item.complete_date}`;
                             } else if (item.due_date) {
-                                dateStr = ` (預定: ${item.due_date})`;
+                                dateStr = ` ${item.due_date}`;
                             }
 
                             timeline.push({
